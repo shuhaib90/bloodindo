@@ -66,6 +66,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
+
+    // Trigger Auth Modal if auth parameter is present in URL query
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('auth') === 'true') {
+        setShowAuth(true);
+      }
+    }
   }, []);
 
   const handleDetectLocation = async () => {

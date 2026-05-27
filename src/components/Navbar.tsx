@@ -144,6 +144,16 @@ export default function Navbar() {
               <span className="tracking-wide uppercase">{activeCount} Urgent Alerts Active</span>
             </div>
             
+            {!isLoggedIn && (
+              <Link 
+                href="/dashboard?auth=true" 
+                className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 px-4.5 py-2 text-sm font-bold text-gray-200 hover:text-white transition-all active:scale-95"
+              >
+                <User className="h-4 w-4 text-brand-red-neon" />
+                <span>Login</span>
+              </Link>
+            )}
+
             <Link 
               href="/feed?trigger=true" 
               className="relative overflow-hidden rounded-full bg-gradient-to-r from-brand-red to-brand-red-neon px-5 py-2 text-sm font-bold text-white shadow-lg shadow-brand-red-neon/20 transition-all hover:scale-105 hover:shadow-brand-red-neon/45 active:scale-95"
@@ -216,6 +226,17 @@ export default function Navbar() {
                 <option value="mg">Manglish</option>
               </select>
             </div>
+
+            {!isLoggedIn && (
+              <Link
+                href="/dashboard?auth=true"
+                onClick={() => setIsOpen(false)}
+                className="flex w-[calc(100%-16px)] mx-2 mt-4 items-center justify-center gap-2 rounded-lg py-3 text-base font-bold text-gray-300 hover:bg-white/5 border border-white/10 transition-all"
+              >
+                <User className="h-5 w-5 text-brand-red-neon" />
+                <span>Secure Login</span>
+              </Link>
+            )}
 
             <div className="mt-4 px-4">
               <Link
