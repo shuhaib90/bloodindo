@@ -1,0 +1,561 @@
+import { supabase } from './supabase';
+
+export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
+export type UrgencyLevel = 'Critical' | 'High' | 'Standard' | 'Rare Blood';
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  username?: string;
+  bloodGroup: BloodGroup | '';
+  city: string;
+  country?: string;
+  state?: string;
+  district?: string;
+  area?: string;
+  latitude?: number;
+  longitude?: number;
+  streak: number;
+  points: number;
+  donationsCount: number;
+  badges: string[];
+  isLoggedIn: boolean;
+  availableToDonate: boolean;
+  telegramChatId?: string;
+}
+
+export interface Donor {
+  id: string;
+  name: string;
+  bloodGroup: BloodGroup;
+  latitude: number;
+  longitude: number;
+  distance: number;
+  city: string;
+  phone: string;
+  available: boolean;
+  avatar: string;
+  badges: string[];
+  streak: number;
+  telegramChatId?: string;
+}
+
+export interface BloodRequest {
+  id: string;
+  patientName: string;
+  bloodGroup: BloodGroup;
+  hospitalName: string;
+  hospitalLocation?: string;
+  contactDetails?: string;
+  notes?: string;
+  countdownMinutes?: number;
+  unitsNeeded: number;
+  unitsFulfilled: number;
+  urgencyLevel: UrgencyLevel;
+  distance?: string;
+  latitude?: number;
+  longitude?: number;
+  status: 'Active' | 'Fulfilled' | 'Expired';
+  createdAt: string;
+  volunteers: string[];
+}
+
+export interface LeaderboardEntry {
+  id: string;
+  name: string;
+  points: number;
+  donations: number;
+  streak: number;
+  avatar: string;
+}
+
+export interface SystemAlert {
+  id: string;
+  type: 'request' | 'volunteer' | 'system' | 'telegram' | 'voice_call';
+  message: string;
+  timestamp: string;
+}
+
+const INITIAL_DONORS: Donor[] = [
+  { id: '1', name: 'Raj Kumar', bloodGroup: 'O+', latitude: 12.9716, longitude: 77.5946, distance: 2.5, city: 'Bengaluru', phone: '+91 98765 43210', available: true, avatar: '👨', badges: ['Fast Responder'], streak: 3 },
+  { id: '2', name: 'Priya Sharma', bloodGroup: 'A-', latitude: 12.9816, longitude: 77.6046, distance: 4.2, city: 'Bengaluru', phone: '+91 98765 43211', available: true, avatar: '👩', badges: ['Lifesaver'], streak: 5 },
+  { id: '3', name: 'Mohammed Ali', bloodGroup: 'B+', latitude: 12.9616, longitude: 77.5846, distance: 1.8, city: 'Bengaluru', phone: '+91 98765 43212', available: true, avatar: '👨', badges: [], streak: 1 },
+  { id: '4', name: 'Anita Desai', bloodGroup: 'O-', latitude: 12.9916, longitude: 77.5746, distance: 5.6, city: 'Bengaluru', phone: '+91 98765 43213', available: true, avatar: '👩', badges: ['Universal Donor'], streak: 8 },
+  { id: '5', name: 'Vikram Singh', bloodGroup: 'AB+', latitude: 12.9516, longitude: 77.6146, distance: 3.1, city: 'Bengaluru', phone: '+91 98765 43214', available: true, avatar: '👨', badges: [], streak: 2 }
+];
+
+const INITIAL_REQUESTS: BloodRequest[] = [
+  { id: 'req_1', patientName: 'Suresh Menon', bloodGroup: 'O+', hospitalName: 'Apollo Hospital', unitsNeeded: 3, unitsFulfilled: 1, urgencyLevel: 'Critical', distance: '3.2 km', latitude: 12.9750, longitude: 77.5900, status: 'Active', createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), volunteers: ['Raj Kumar'] },
+  { id: 'req_2', patientName: 'Meera Reddy', bloodGroup: 'A-', hospitalName: 'Manipal Hospital', unitsNeeded: 2, unitsFulfilled: 0, urgencyLevel: 'High', distance: '5.1 km', latitude: 12.9800, longitude: 77.6100, status: 'Active', createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), volunteers: [] },
+  { id: 'req_3', patientName: 'Kiran Patel', bloodGroup: 'B+', hospitalName: 'Fortis Hospital', unitsNeeded: 1, unitsFulfilled: 1, urgencyLevel: 'Standard', distance: '1.5 km', latitude: 12.9650, longitude: 77.5800, status: 'Fulfilled', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), volunteers: ['Mohammed Ali'] }
+];
+
+const INITIAL_LEADERBOARD: LeaderboardEntry[] = [
+  { id: 'l1', name: 'Anita Desai', points: 1250, donations: 12, streak: 8, avatar: '👩' },
+  { id: 'l2', name: 'Arjun Nair', points: 980, donations: 9, streak: 6, avatar: '👨' },
+  { id: 'l3', name: 'Priya Sharma', points: 850, donations: 8, streak: 5, avatar: '👩' },
+  { id: 'l4', name: 'Sarah Connor', points: 450, donations: 3, streak: 4, avatar: '🦸‍♀️' },
+  { id: 'l5', name: 'Raj Kumar', points: 320, donations: 3, streak: 3, avatar: '👨' }
+];
+
+const INITIAL_ALERTS: SystemAlert[] = [
+  { id: 'a1', type: 'system', message: 'System initialized. Radar active.', timestamp: new Date().toISOString() }
+];
+
+const isClient = typeof window !== 'undefined';
+
+const getStorageItem = <T>(key: string, defaultValue: T): T => {
+  if (!isClient) return defaultValue;
+  try {
+    const item = window.localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error('Error reading localStorage', error);
+    return defaultValue;
+  }
+};
+
+const setStorageItem = <T>(key: string, value: T): void => {
+  if (!isClient) return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error('Error writing to localStorage', error);
+  }
+};
+
+const syncProfileToSupabase = async (profile: UserProfile) => {
+  if (!profile.isLoggedIn) return;
+  try {
+    const { data: existingProfiles, error: fetchError } = await supabase
+      .from('bloodindo_profiles')
+      .select('id')
+      .eq('phone', profile.phone);
+    if (fetchError) throw fetchError;
+    if (existingProfiles && existingProfiles.length > 0) {
+      const { error: updateError } = await supabase
+        .from('bloodindo_profiles')
+        .update({
+          name: profile.name,
+          email: profile.email,
+          blood_group: profile.bloodGroup,
+          city: profile.city,
+          country: profile.country || null,
+          state: profile.state || null,
+          district: profile.district || null,
+          area: profile.area || null,
+          latitude: profile.latitude || null,
+          longitude: profile.longitude || null,
+          streak: profile.streak,
+          points: profile.points,
+          donations_count: profile.donationsCount,
+          badges: profile.badges,
+          is_logged_in: profile.isLoggedIn,
+          available_to_donate: profile.availableToDonate,
+          username: profile.username || null
+        })
+        .eq('phone', profile.phone);
+      if (updateError) throw updateError;
+    } else {
+      const customId = "user_" + Date.now();
+      const { error: insertError } = await supabase
+        .from('bloodindo_profiles')
+        .insert({
+          id: customId,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          blood_group: profile.bloodGroup,
+          city: profile.city,
+          country: profile.country || null,
+          state: profile.state || null,
+          district: profile.district || null,
+          area: profile.area || null,
+          latitude: profile.latitude || null,
+          longitude: profile.longitude || null,
+          streak: profile.streak,
+          points: profile.points,
+          donations_count: profile.donationsCount,
+          badges: profile.badges,
+          is_logged_in: profile.isLoggedIn,
+          available_to_donate: profile.availableToDonate,
+          username: profile.username || null
+        });
+      if (insertError) throw insertError;
+    }
+  } catch (err) {
+    console.error("Supabase sync profile failed", err);
+  }
+};
+
+const syncRequestToSupabase = async (req: BloodRequest) => {
+  try {
+    const { error } = await supabase
+      .from('bloodindo_requests')
+      .upsert({
+        id: req.id,
+        patient_name: req.patientName,
+        blood_group: req.bloodGroup,
+        hospital_name: req.hospitalName,
+        units_needed: req.unitsNeeded,
+        units_fulfilled: req.unitsFulfilled,
+        urgency_level: req.urgencyLevel,
+        distance: req.distance,
+        latitude: req.latitude,
+        longitude: req.longitude,
+        status: req.status,
+        created_at: req.createdAt,
+        volunteers: req.volunteers
+      });
+    if (error) throw error;
+  } catch (err) {
+    console.warn("Supabase sync request failed (suppressed error overlay)", err instanceof Error ? err.message : String(err));
+  }
+};
+
+const syncAlertToSupabase = async (alert: SystemAlert) => {
+  try {
+    const { error } = await supabase
+      .from('bloodindo_alerts')
+      .upsert({
+        id: alert.id,
+        type: alert.type,
+        message: alert.message,
+        timestamp: alert.timestamp
+      });
+    if (error) throw error;
+  } catch (err) {
+    console.warn("Supabase sync alert failed (suppressed error overlay)", err instanceof Error ? err.message : String(err));
+  }
+};
+
+export const db = {
+  initializeSupabaseSync: () => {
+    db.syncLocalFromSupabase();
+  },
+  syncLocalFromSupabase: async (): Promise<void> => {
+    try {
+      console.log("[Supabase Sync] Fetching master data from Supabase...");
+      const { data: dbRequests } = await supabase.from('bloodindo_requests').select('*').order('created_at', { ascending: false });
+      if (dbRequests && dbRequests.length > 0) {
+        const mapped = dbRequests.map(r => ({
+          id: r.id,
+          patientName: r.patient_name,
+          bloodGroup: r.blood_group as BloodGroup,
+          hospitalName: r.hospital_name,
+          unitsNeeded: r.units_needed,
+          unitsFulfilled: r.units_fulfilled,
+          urgencyLevel: r.urgency_level as 'Critical' | 'High' | 'Standard',
+          distance: r.distance,
+          latitude: r.latitude || 0,
+          longitude: r.longitude || 0,
+          status: r.status as 'Active' | 'Fulfilled' | 'Expired',
+          createdAt: r.created_at,
+          volunteers: r.volunteers || []
+        }));
+        setStorageItem('blood_requests', mapped);
+      }
+      
+      const { data: dbAlerts } = await supabase.from('bloodindo_alerts').select('*').order('timestamp', { ascending: false }).limit(50);
+      if (dbAlerts && dbAlerts.length > 0) {
+        const mapped = dbAlerts.map(a => ({
+          id: a.id,
+          type: a.type as 'request' | 'volunteer' | 'system' | 'telegram' | 'voice_call',
+          message: a.message,
+          timestamp: a.timestamp
+        }));
+        setStorageItem('blood_system_alerts', mapped);
+      }
+
+      const { data: dbProfiles } = await supabase.from('bloodindo_profiles').select('*').eq('is_logged_in', true).limit(1).single();
+      if (dbProfiles) {
+        const mapped: UserProfile = {
+          name: dbProfiles.name || '',
+          email: dbProfiles.email || '',
+          phone: dbProfiles.phone || '',
+          username: dbProfiles.username || '',
+          bloodGroup: dbProfiles.blood_group as BloodGroup,
+          city: dbProfiles.city || '',
+          country: dbProfiles.country || '',
+          state: dbProfiles.state || '',
+          district: dbProfiles.district || '',
+          area: dbProfiles.area || '',
+          latitude: dbProfiles.latitude || 0,
+          longitude: dbProfiles.longitude || 0,
+          streak: dbProfiles.streak || 0,
+          points: dbProfiles.points || 0,
+          donationsCount: dbProfiles.donations_count || 0,
+          badges: dbProfiles.badges || [],
+          isLoggedIn: dbProfiles.is_logged_in || false,
+          availableToDonate: dbProfiles.available_to_donate || false
+        };
+        setStorageItem('blood_user_profile', mapped);
+      }
+
+      console.log("[Supabase Sync] Complete! Local cache updated seamlessly.");
+    } catch (e) {
+      console.error("[Supabase Sync] Background connection failed:", e);
+    }
+  },
+
+  getRequests: (): BloodRequest[] => {
+    return getStorageItem('blood_requests', INITIAL_REQUESTS);
+  },
+
+  saveRequests: (requests: BloodRequest[]): void => {
+    setStorageItem('blood_requests', requests);
+  },
+
+  createRequest: (req: Omit<BloodRequest, 'id' | 'createdAt' | 'unitsFulfilled' | 'status' | 'volunteers'>): BloodRequest => {
+    const requests = db.getRequests();
+    const newRequest: BloodRequest = {
+      ...req,
+      id: "req_" + Date.now(),
+      createdAt: new Date().toISOString(),
+      unitsFulfilled: 0,
+      status: 'Active',
+      volunteers: []
+    };
+    requests.unshift(newRequest);
+    db.saveRequests(requests);
+
+    db.addSystemAlert({
+      type: 'request',
+      message: "EMERGENCY BROADCAST: " + newRequest.urgencyLevel + " need for " + newRequest.bloodGroup + " at " + newRequest.hospitalName + " for patient " + newRequest.patientName + "."
+    });
+
+    syncRequestToSupabase(newRequest);
+    return newRequest;
+  },
+
+  volunteerToDonate: (requestId: string, donorName: string, donorBloodGroup: BloodGroup): { success: boolean; message: string } => {
+    const requests = db.getRequests();
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    
+    if (reqIndex !== -1) {
+      const request = requests[reqIndex];
+      if (!request.volunteers.includes(donorName)) {
+        request.volunteers.push(donorName);
+        request.unitsFulfilled = Math.min(request.unitsNeeded, request.unitsFulfilled + 1);
+        
+        if (request.unitsFulfilled >= request.unitsNeeded) {
+          request.status = 'Fulfilled';
+        }
+        
+        requests[reqIndex] = request;
+        db.saveRequests(requests);
+
+        db.addSystemAlert({
+          type: 'volunteer',
+          message: "VOLUNTEER ACCEPTED: " + donorName + " (" + donorBloodGroup + ") volunteered to donate for " + request.patientName + "."
+        });
+
+        syncRequestToSupabase(request);
+        return { success: true, message: 'Thank you! Your donation offer has been registered and the hospital notified.' };
+      }
+      return { success: false, message: 'You have already volunteered for this request.' };
+    }
+    return { success: false, message: 'Request not found.' };
+  },
+
+  markRequestAsFulfilled: (requestId: string): { success: boolean; message: string } => {
+    const requests = db.getRequests();
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex !== -1) {
+      const req = requests[reqIndex];
+      req.status = 'Fulfilled';
+      req.unitsFulfilled = req.unitsNeeded;
+      requests[reqIndex] = req;
+      db.saveRequests(requests);
+      
+      db.addSystemAlert({
+        type: 'volunteer',
+        message: "BLOOD RECEIVED: Patient " + req.patientName + " (" + req.bloodGroup + ") successfully received blood."
+      });
+
+      syncRequestToSupabase(req);
+      return { success: true, message: 'Request marked as successfully fulfilled.' };
+    }
+    return { success: false, message: 'Request not found.' };
+  },
+
+  getDonors: (): Donor[] => {
+    const list = getStorageItem('blood_donors', INITIAL_DONORS);
+    const profile = db.getUserProfile();
+    if (profile && profile.isLoggedIn && profile.availableToDonate) {
+      const alreadyInList = list.some(d => d.id === 'user_self');
+      if (!alreadyInList) {
+        list.push({
+          id: 'user_self',
+          name: profile.name + " (You)",
+          bloodGroup: (profile.bloodGroup || 'O-') as BloodGroup,
+          latitude: profile.latitude || 12.9720,
+          longitude: profile.longitude || 77.5930,
+          phone: profile.phone,
+          available: true,
+          distance: 0.5,
+          city: profile.city || 'Bengaluru',
+          avatar: '🦸‍♂️',
+          badges: profile.badges,
+          streak: profile.streak
+        });
+      }
+    }
+    return list;
+  },
+
+  saveDonors: (donors: Donor[]): void => {
+    setStorageItem('blood_donors', donors);
+  },
+
+  getLeaderboard: (): LeaderboardEntry[] => {
+    return getStorageItem('blood_leaderboard', INITIAL_LEADERBOARD);
+  },
+
+  saveLeaderboard: (leaderboard: LeaderboardEntry[]): void => {
+    setStorageItem('blood_leaderboard', leaderboard);
+  },
+
+  getSystemAlerts: (): SystemAlert[] => {
+    return getStorageItem('blood_system_alerts', INITIAL_ALERTS);
+  },
+
+  addSystemAlert: (alert: Omit<SystemAlert, 'id' | 'timestamp'>): void => {
+    const alerts = db.getSystemAlerts();
+    const newAlert: SystemAlert = {
+      ...alert,
+      id: "alert_" + Date.now(),
+      timestamp: new Date().toISOString()
+    };
+    alerts.unshift(newAlert);
+    if (alerts.length > 50) alerts.pop();
+    setStorageItem('blood_system_alerts', alerts);
+    syncAlertToSupabase(newAlert);
+  },
+
+  getUserProfile: (): UserProfile => {
+    const defaultProfile: UserProfile = {
+      name: '',
+      email: '',
+      phone: '',
+      username: '',
+      bloodGroup: '',
+      city: '',
+      country: '',
+      state: '',
+      district: '',
+      area: '',
+      latitude: 0,
+      longitude: 0,
+      streak: 0,
+      points: 0,
+      donationsCount: 0,
+      badges: [],
+      isLoggedIn: false,
+      availableToDonate: false,
+      telegramChatId: ''
+    };
+    return getStorageItem('blood_user_profile', defaultProfile);
+  },
+
+  saveUserProfile: (profile: UserProfile): void => {
+    setStorageItem('blood_user_profile', profile);
+    syncProfileToSupabase(profile);
+  },
+  
+  calculateDistance: (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return Math.round(R * c * 10) / 10;
+  },
+
+  isCompatible: (donor: BloodGroup, patient: BloodGroup): boolean => {
+    const matrix: Record<string, string[]> = {
+      'O-': ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+      'O+': ['O+', 'A+', 'B+', 'AB+'],
+      'A-': ['A-', 'A+', 'AB-', 'AB+'],
+      'A+': ['A+', 'AB+'],
+      'B-': ['B-', 'B+', 'AB-', 'AB+'],
+      'B+': ['B+', 'AB+'],
+      'AB-': ['AB-', 'AB+'],
+      'AB+': ['AB+']
+    };
+    return matrix[donor]?.includes(patient) || false;
+  },
+
+
+
+  linkTelegramByPhone: (phone: string, chatId: string): { success: boolean; name: string } => {
+    const normalize = (p: string) => p.replace(/\D/g, '').slice(-10);
+    const target = normalize(phone);
+    if (!target) return { success: false, name: '' };
+
+    // Check logged in user
+    const profile = db.getUserProfile();
+    if (profile.phone && normalize(profile.phone) === target) {
+      profile.telegramChatId = chatId;
+      db.saveUserProfile(profile);
+      return { success: true, name: profile.name };
+    }
+
+    // Check donors list
+    const donors = db.getDonors();
+    const donorIndex = donors.findIndex(d => d.phone && normalize(d.phone) === target);
+    if (donorIndex !== -1) {
+      donors[donorIndex].telegramChatId = chatId;
+      db.saveDonors(donors);
+      return { success: true, name: donors[donorIndex].name };
+    }
+
+    return { success: false, name: '' };
+  },
+
+  sendTelegramMessage: async (chatId: string, text: string): Promise<boolean> => {
+    const token = process.env.TELEGRAM_BOT_TOKEN || process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || '';
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: 'HTML'
+        })
+      });
+      return res.ok;
+    } catch (e) {
+      console.error("Failed to send Telegram message", e);
+      return false;
+    }
+  },
+
+  sendMatchingAlerts: async (req: BloodRequest) => {
+    const donors = db.getDonors();
+    for (const donor of donors) {
+      if (donor.telegramChatId && db.isCompatible(donor.bloodGroup, req.bloodGroup)) {
+        const text = `🚨 <b>NEW MATCHING EMERGENCY</b> 🚨\n\n` +
+          `A patient needs <b>${req.bloodGroup}</b> blood immediately!\n\n` +
+          `• <b>Patient:</b> ${req.patientName}\n` +
+          `• <b>Hospital:</b> ${req.hospitalName}\n` +
+          `• <b>Location:</b> ${req.hospitalLocation || 'N/A'}\n` +
+          `• <b>Urgency:</b> ${req.urgencyLevel}\n` +
+          `• <b>Required Units:</b> ${req.unitsNeeded}\n` +
+          `${req.notes ? `• <b>Notes:</b> ${req.notes}\n` : ''}\n` +
+          `Please open Blood Indo to volunteer and save a life!`;
+        await db.sendTelegramMessage(donor.telegramChatId, text);
+        
+        db.addSystemAlert({
+          type: 'telegram',
+          message: `Auto-matched alert sent to donor ${donor.name} via Telegram.`
+        });
+      }
+    }
+  }
+};
