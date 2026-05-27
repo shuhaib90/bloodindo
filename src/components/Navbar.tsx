@@ -203,6 +203,20 @@ export default function Navbar() {
               {t("nav_warning_btn")}
             </button>
 
+            {/* Mobile Language Switcher */}
+            <div className="mt-4 px-4 py-3 flex items-center justify-between border-t border-b border-white/5">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Select Language</span>
+              <select 
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="bg-brand-black border border-white/10 rounded-lg text-xs font-bold text-gray-300 px-3 py-1.5 focus:outline-none focus:border-brand-red-neon cursor-pointer"
+              >
+                <option value="en">English</option>
+                <option value="ml">മലയാളം</option>
+                <option value="mg">Manglish</option>
+              </select>
+            </div>
+
             <div className="mt-4 px-4">
               <Link
                 href="/feed?trigger=true"
