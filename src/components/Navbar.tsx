@@ -13,6 +13,24 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeCount, setActiveCount] = useState(0);
   const [pulse, setPulse] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const updateLoginStatus = () => {
+      const profile = db.getUserProfile();
+      setIsLoggedIn(profile && profile.isLoggedIn);
+    };
+
+    updateLoginStatus();
+
+    window.addEventListener('telegram-status-updated', updateLoginStatus);
+    window.addEventListener('storage', updateLoginStatus);
+    
+    return () => {
+      window.removeEventListener('telegram-status-updated', updateLoginStatus);
+      window.removeEventListener('storage', updateLoginStatus);
+    };
+  }, []);
 
   useEffect(() => {
     db.initializeSupabaseSync();
@@ -42,7 +60,7 @@ export default function Navbar() {
     const navItems = [
     { name: t("nav_emergency_feed"), href: '/feed', icon: ShieldAlert },
     { name: t("nav_donor_radar"), href: '/donors', icon: Heart },
-    { name: t("nav_my_profile"), href: '/dashboard', icon: User },
+    ...(isLoggedIn ? [{ name: t("nav_my_profile"), href: '/dashboard', icon: User }] : []),
     { name: t("nav_hospital_hub"), href: '/hospital', icon: Building2 },
   ];
 

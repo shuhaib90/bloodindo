@@ -133,6 +133,7 @@ export default function DashboardPage() {
   const handleLogout = () => {
     // Simply clear profile and reload
     db.saveUserProfile({ ...db.getUserProfile(), isLoggedIn: false } as any);
+    window.dispatchEvent(new Event('telegram-status-updated'));
     window.location.reload();
   };
 
@@ -200,6 +201,7 @@ export default function DashboardPage() {
 
       // Save locally
       db.saveUserProfile(updatedProfile);
+        window.dispatchEvent(new Event('telegram-status-updated'));
       setProfile(updatedProfile);
       
       // Update form state fields so dashboard UI reflects them immediately
