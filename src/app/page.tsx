@@ -72,6 +72,11 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-brand-black overflow-hidden flex flex-col justify-center items-center px-4 py-12">
+      {/* Hero Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-[0.08] mix-blend-lighten" 
+        style={{ backgroundImage: "url('/hero-bg.png')" }}
+      ></div>
       <div className="absolute -left-1/4 -top-1/4 h-[80vw] w-[80vw] rounded-full bg-brand-red-neon/5 blur-[120px] pointer-events-none"></div>
       <div className="absolute -right-1/4 -bottom-1/4 h-[80vw] w-[80vw] rounded-full bg-brand-red-neon/5 blur-[120px] pointer-events-none"></div>
 
