@@ -72,88 +72,106 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-brand-black overflow-hidden flex flex-col justify-center items-center px-4 py-12">
-      {/* Hero Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-[0.08] mix-blend-lighten" 
-        style={{ backgroundImage: "url('/hero-bg.png')" }}
-      ></div>
       <div className="absolute -left-1/4 -top-1/4 h-[80vw] w-[80vw] rounded-full bg-brand-red-neon/5 blur-[120px] pointer-events-none"></div>
       <div className="absolute -right-1/4 -bottom-1/4 h-[80vw] w-[80vw] rounded-full bg-brand-red-neon/5 blur-[120px] pointer-events-none"></div>
 
-      <div className="w-full max-w-5xl z-10 flex flex-col items-center text-center">
-        <div className="w-full max-w-2xl mb-8 glass-panel bg-brand-red-dark/10 border border-brand-red-neon/20 rounded-full px-5 py-2.5 flex items-center gap-3 overflow-hidden shadow-[0_0_15px_rgba(255,0,60,0.05)]">
-          <span className="flex h-2 w-2 shrink-0 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-red-neon opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-red-neon"></span>
-          </span>
-          
-          <div className="flex-1 text-xs font-bold text-brand-red-glow uppercase tracking-wider overflow-hidden whitespace-nowrap text-ellipsis text-left">
-            <span className="text-gray-400 font-medium lowercase italic mr-2">latest alert:</span>
-            {alerts[0]?.message || "Initializing secure emergency matching gateways..."}
-          </div>
-        </div>
-
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white mb-4 uppercase font-sans">
-          Securing Lives<br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red-neon via-brand-red to-brand-red-glow">In Real-Time</span>
-        </h1>
+      <div className="w-full max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         
-        <p className="max-w-xl text-sm sm:text-base text-gray-400 mb-12 font-medium leading-relaxed">
-          {t("hero_subtitle")}
-        </p>
-
-        <div className="relative mb-16 flex items-center justify-center">
-          <div className="absolute h-80 w-80 rounded-full border border-brand-red-neon/10 animate-ping opacity-25"></div>
-          <div className="absolute h-64 w-64 rounded-full border border-brand-red-neon/15 animate-pulse opacity-40"></div>
-          <div className="absolute h-48 w-48 rounded-full bg-brand-red-dark/10 border border-brand-red-neon/20 shadow-[0_0_50px_rgba(255,0,60,0.1)]"></div>
-
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="relative z-10 flex h-36 w-36 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-red via-brand-red-deep to-brand-red-dark border border-brand-red-neon/50 text-white shadow-2xl shadow-brand-red-neon/40 hover:scale-105 active:scale-95 transition-all duration-300 group"
-          >
-            <Activity className="h-10 w-10 text-white animate-pulse mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-black tracking-widest uppercase leading-none">TRIGGER</span>
-            <span className="text-[9px] font-bold text-brand-red-glow tracking-widest uppercase mt-1 leading-none">BROADCAST</span>
-            <span className="absolute -inset-0.5 rounded-full bg-brand-red-neon/30 blur opacity-0 group-hover:opacity-100 transition-opacity"></span>
-          </button>
-        </div>
-
-        <div className="w-full grid grid-cols-3 gap-3 sm:gap-6 mb-12">
-          <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col items-center">
-            <ShieldAlert className="h-6 w-6 text-brand-red-neon mb-2" />
-            <span className="text-2xl sm:text-4xl font-black text-white">{stats.active}</span>
-            <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase mt-1 tracking-wider">{t("hero_active_alerts")}</span>
-          </div>
+        {/* Left: Content Column */}
+        <div className="col-span-1 lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
           
-          <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col items-center">
-            <Users className="h-6 w-6 text-brand-red-glow mb-2" />
-            <span className="text-2xl sm:text-4xl font-black text-white">{stats.donors}</span>
-            <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase mt-1 tracking-wider">Donors Active</span>
+          <div className="w-full max-w-xl mb-6 glass-panel bg-brand-red-dark/10 border border-brand-red-neon/20 rounded-full px-5 py-2.5 flex items-center gap-3 overflow-hidden shadow-[0_0_15px_rgba(255,0,60,0.05)]">
+            <span className="flex h-2 w-2 shrink-0 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-red-neon opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-red-neon"></span>
+            </span>
+            
+            <div className="flex-1 text-xs font-bold text-brand-red-glow uppercase tracking-wider overflow-hidden whitespace-nowrap text-ellipsis text-left">
+              <span className="text-gray-400 font-medium lowercase italic mr-2">latest alert:</span>
+              {alerts[0]?.message || "Initializing secure emergency matching gateways..."}
+            </div>
           </div>
 
-          <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col items-center">
-            <Heart className="h-6 w-6 text-emerald-400 mb-2" />
-            <span className="text-2xl sm:text-4xl font-black text-emerald-400">{stats.saved}</span>
-            <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase mt-1 tracking-wider">{t("hero_lives_saved")}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xl">
-          <Link
-            href="/feed"
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white py-4 text-sm font-bold active:scale-95 transition-all"
-          >
-            Open Emergency Feed <ChevronRight className="h-4 w-4" />
-          </Link>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4 uppercase font-sans leading-none">
+            Securing Lives<br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red-neon via-brand-red to-brand-red-glow">In Real-Time</span>
+          </h1>
           
-          <Link
-            href="/donors"
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon hover:shadow-[0_0_15px_rgba(255,0,60,0.25)] text-white py-4 text-sm font-bold active:scale-95 transition-all"
-          >
-            Locate Nearby Donors
-          </Link>
+          <p className="max-w-xl text-sm sm:text-base text-gray-400 mb-8 font-medium leading-relaxed">
+            {t("hero_subtitle")}
+          </p>
+
+          <div className="w-full grid grid-cols-3 gap-3 mb-8 max-w-lg">
+            <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center">
+              <ShieldAlert className="h-5 w-5 text-brand-red-neon mb-1.5" />
+              <span className="text-xl sm:text-2xl font-black text-white">{stats.active}</span>
+              <span className="text-[9px] font-bold text-gray-500 uppercase mt-0.5 tracking-wider">{t("hero_active_alerts")}</span>
+            </div>
+            
+            <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center">
+              <Users className="h-5 w-5 text-brand-red-glow mb-1.5" />
+              <span className="text-xl sm:text-2xl font-black text-white">{stats.donors}</span>
+              <span className="text-[9px] font-bold text-gray-500 uppercase mt-0.5 tracking-wider">Donors Active</span>
+            </div>
+
+            <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 flex flex-col items-center">
+              <Heart className="h-5 w-5 text-emerald-400 mb-1.5" />
+              <span className="text-xl sm:text-2xl font-black text-emerald-400">{stats.saved}</span>
+              <span className="text-[9px] font-bold text-gray-500 uppercase mt-0.5 tracking-wider">{t("hero_lives_saved")}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg mb-8 lg:mb-0">
+            <Link
+              href="/feed"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white py-4 text-sm font-bold active:scale-95 transition-all text-center"
+            >
+              Open Emergency Feed <ChevronRight className="h-4 w-4 inline" />
+            </Link>
+            
+            <Link
+              href="/donors"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon hover:shadow-[0_0_15px_rgba(255,0,60,0.25)] text-white py-4 text-sm font-bold active:scale-95 transition-all text-center"
+            >
+              Donor Radar <ChevronRight className="h-4 w-4 inline" />
+            </Link>
+          </div>
+
         </div>
+
+        {/* Right: Graphic & Action Column */}
+        <div className="col-span-1 lg:col-span-5 flex flex-col items-center justify-center relative">
+          
+          {/* Beautiful pulsing frame overlay for the vector illustration */}
+          <div className="relative w-full max-w-sm aspect-[4/3] rounded-3xl overflow-hidden border border-brand-red-neon/30 bg-brand-charcoal/60 p-1.5 shadow-[0_0_35px_rgba(255,0,60,0.15)] mb-8 transition-transform hover:scale-[1.02] duration-500">
+            <div 
+              className="w-full h-full rounded-2xl bg-cover bg-center mix-blend-lighten opacity-[0.9]"
+              style={{ backgroundImage: "url('/hero-bg.png')" }}
+            />
+          </div>
+
+          {/* Trigger Broadcast Button */}
+          <div className="relative flex items-center justify-center">
+            <div className="absolute h-56 w-56 rounded-full border border-brand-red-neon/10 animate-ping opacity-25"></div>
+            <div className="absolute h-44 w-44 rounded-full border border-brand-red-neon/15 animate-pulse opacity-40"></div>
+            <div className="absolute h-36 w-36 rounded-full bg-brand-red-dark/10 border border-brand-red-neon/20 shadow-[0_0_30px_rgba(255,0,60,0.1)]"></div>
+
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="relative z-10 flex h-28 w-28 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-red via-brand-red-deep to-brand-red-dark border border-brand-red-neon/50 text-white shadow-2xl shadow-brand-red-neon/40 hover:scale-105 active:scale-95 transition-all duration-300 group"
+            >
+              <Activity className="h-8 w-8 text-white animate-pulse mb-1 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-black tracking-widest uppercase leading-none">TRIGGER</span>
+              <span className="text-[8px] font-bold text-brand-red-glow tracking-widest uppercase mt-0.5 leading-none">BROADCAST</span>
+              <span className="absolute -inset-0.5 rounded-full bg-brand-red-neon/30 blur opacity-0 group-hover:opacity-100 transition-opacity"></span>
+            </button>
+          </div>
+
+        </div>
+
       </div>
+
+
 
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-brand-black/80 backdrop-blur-sm animate-fadeIn">
