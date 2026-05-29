@@ -477,22 +477,31 @@ export const db = {
     const list = getStorageItem('blood_donors', INITIAL_DONORS);
     const profile = db.getUserProfile();
     if (profile && profile.isLoggedIn && profile.availableToDonate) {
-      const alreadyInList = list.some(d => d.id === 'user_self');
-      if (!alreadyInList) {
-        list.push({
-          id: 'user_self',
-          name: profile.name + " (You)",
-          bloodGroup: (profile.bloodGroup || 'O-') as BloodGroup,
-          latitude: profile.latitude || 12.9720,
-          longitude: profile.longitude || 77.5930,
-          phone: profile.phone,
-          available: true,
-          distance: 0.5,
-          city: profile.city || 'Bengaluru',
-          avatar: '🦸‍♂️',
-          badges: profile.badges,
-          streak: profile.streak
-        });
+      const userIndex = list.findIndex(d => d.id === 'user_self');
+      const userSelfDonor: Donor = {
+        id: 'user_self',
+        name: (profile.name || 'Google Lifesaver') + " (You)",
+        bloodGroup: (profile.bloodGroup || 'O-') as BloodGroup,
+        latitude: profile.latitude || 12.9720,
+        longitude: profile.longitude || 77.5930,
+        phone: profile.phone || '',
+        available: true,
+        distance: 0.5,
+        city: profile.city || 'Kochi, Kerala',
+        avatar: '🦸‍♂️',
+        badges: profile.badges || [],
+        streak: profile.streak || 0
+      };
+      
+      if (userIndex === -1) {
+        list.push(userSelfDonor);
+      } else {
+        list[userIndex] = userSelfDonor;
+      }
+    } else {
+      const userIndex = list.findIndex(d => d.id === 'user_self');
+      if (userIndex !== -1) {
+        list.splice(userIndex, 1);
       }
     }
     return list;

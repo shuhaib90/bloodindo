@@ -16,16 +16,21 @@ export default function RadarScanner({ selectedBloodGroup, donors, onDonorSelect
   const [isScanning, setIsScanning] = useState(true);
   const [filteredDonors, setFilteredDonors] = useState<Donor[]>([]);
 
+  const [radarRange, setRadarRange] = useState<number>(15);
+
   useEffect(() => {
+    // Filter donors that are available AND inside our selected zoom scope (range)
+    let list = donors.filter(d => d.available && d.distance <= radarRange);
+    
     if (!selectedBloodGroup) {
-      setFilteredDonors(donors.filter(d => d.available));
+      setFilteredDonors(list);
       return;
     }
-    const compatible = donors.filter(d => 
-      d.available && db.isCompatible(d.bloodGroup, selectedBloodGroup)
+    const compatible = list.filter(d => 
+      db.isCompatible(d.bloodGroup, selectedBloodGroup)
     );
     setFilteredDonors(compatible);
-  }, [selectedBloodGroup, donors]);
+  }, [selectedBloodGroup, donors, radarRange]);
 
   useEffect(() => {
     setIsScanning(true);
@@ -56,6 +61,26 @@ export default function RadarScanner({ selectedBloodGroup, donors, onDonorSelect
         </div>
       )}
 
+      {/* Zoom pills control */}
+      <div className="w-full flex items-center justify-between gap-2 mb-4 bg-brand-black/40 border border-white/5 p-1 rounded-xl">
+        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold pl-2">Radar Zoom</span>
+        <div className="flex gap-1">
+          {[5, 15, 50].map((range) => (
+            <button
+              key={range}
+              onClick={() => setRadarRange(range)}
+              className={"text-[10px] font-extrabold px-3 py-1 rounded-lg transition-all " + (
+                radarRange === range
+                  ? 'bg-brand-red-neon text-white shadow-[0_0_10px_rgba(255,0,60,0.4)]'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              )}
+            >
+              {range} km
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Interactive Radar Screen visual */}
       <div className="relative w-full aspect-square max-w-[280px] rounded-full bg-brand-black/80 border-2 border-brand-red-neon/30 overflow-hidden shadow-[0_0_30px_rgba(255,0,60,0.1)] mx-auto flex items-center justify-center">
         {/* Radar grids */}
@@ -78,7 +103,7 @@ export default function RadarScanner({ selectedBloodGroup, donors, onDonorSelect
         {/* Blips */}
         {!isScanning && filteredDonors.map((donor, idx) => {
           // Normalize distance and angle for the UI radar circle
-          const distScale = Math.min(Math.max(donor.distance / 15, 0.1), 0.95);
+          const distScale = Math.min(Math.max(donor.distance / radarRange, 0.1), 0.95);
           const angle = (idx * 137.5) % 360; 
           
           const x = 50 + (distScale * 50 * Math.cos(angle * Math.PI / 180));
