@@ -20,14 +20,17 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
   const [isVolunteered, setIsVolunteered] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const userProfile = db.getUserProfile();
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [isCreator, setIsCreator] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const loadProfile = () => {
+      const profile = db.getUserProfile();
+      setUserProfile(profile);
+      
       const normalize = (p?: string): string => (p || '').replace(/\D/g, '').slice(-10);
-      const isPhoneMatch = userProfile.phone && request.contactDetails && 
-        normalize(userProfile.phone) === normalize(request.contactDetails);
+      const isPhoneMatch = profile && profile.phone && request.contactDetails && 
+        normalize(profile.phone) === normalize(request.contactDetails);
       
       if (isPhoneMatch || allowFulfillOverride) {
         setIsCreator(true);
@@ -41,8 +44,12 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
       } catch (e) {
         setIsCreator(false);
       }
-    }
-  }, [request.id, request.contactDetails, userProfile.phone, allowFulfillOverride]);
+    };
+
+    loadProfile();
+    window.addEventListener('telegram-status-updated', loadProfile);
+    return () => window.removeEventListener('telegram-status-updated', loadProfile);
+  }, [request.id, request.contactDetails, allowFulfillOverride]);
 
   // Countdown timer logic
   useEffect(() => {

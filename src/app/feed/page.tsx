@@ -56,6 +56,7 @@ function FeedContent() {
   const [requests, setRequests] = useState<any[]>([]);
   const [systemAlerts, setSystemAlerts] = useState<any[]>([]);
   const [myCreatedIds, setMyCreatedIds] = useState<string[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   // Tabs
   const [activeTab, setActiveTab] = useState("all"); // "all" | "my"
@@ -92,11 +93,12 @@ function FeedContent() {
   const [editUrgencyLevel, setEditUrgencyLevel] = useState<UrgencyLevel>("Critical");
   const [editNotes, setEditNotes] = useState("");
 
-  const userProfile = db.getUserProfile();
+
 
   const loadData = () => {
     setRequests(db.getRequests());
     setSystemAlerts(db.getSystemAlerts().slice(0, 10));
+    setUserProfile(db.getUserProfile());
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem('my_created_requests');
@@ -111,8 +113,12 @@ function FeedContent() {
       setIsFormOpen(true);
     }
     
+    window.addEventListener('telegram-status-updated', loadData);
     const interval = setInterval(loadData, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('telegram-status-updated', loadData);
+    };
   }, [searchParams]);
 
   // Pre-fill contact details from profile on load
@@ -229,7 +235,7 @@ function FeedContent() {
     
     // Normalize phone numbers to make comparison robust against country codes/spaces
     const tabMatch = activeTab === "all" || myCreatedIds.includes(req.id) || (
-      req.contactDetails && userProfile.phone && 
+      req.contactDetails && userProfile && userProfile.phone && 
       normalizePhone(req.contactDetails) === normalizePhone(userProfile.phone)
     );
     return bloodMatch && urgencyMatch && tabMatch;
@@ -247,7 +253,7 @@ function FeedContent() {
 
   const myRequestsCount = requests.filter((r: any) => 
     myCreatedIds.includes(r.id) || (
-      r.contactDetails && userProfile.phone && 
+      r.contactDetails && userProfile && userProfile.phone && 
       normalizePhone(r.contactDetails) === normalizePhone(userProfile.phone)
     )
   ).length;
