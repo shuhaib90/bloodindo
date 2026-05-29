@@ -108,7 +108,7 @@ export default function TelegramBotWorker() {
       if (text.startsWith('/start')) {
         sessions.set(chatId, { step: 'awaiting_phone' });
         
-        const welcomeText = `👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 6282876261</code> or <code>6282876261</code>).\n\n<i>Or, click the button below to share your contact instantly!</i>`;
+        const welcomeText = `👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).\n\n<i>Or, click the button below to share your contact instantly!</i>`;
         
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',

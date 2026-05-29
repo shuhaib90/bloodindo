@@ -14,7 +14,7 @@ export default function TelegramSim() {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'bot',
-      text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 6282876261</code> or <code>6282876261</code>).',
+      text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -247,7 +247,7 @@ export default function TelegramSim() {
       setMessages([
         {
           sender: 'bot',
-          text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 6282876261</code> or <code>6282876261</code>).',
+          text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);

@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase";
 import { useTranslation } from "../../components/LanguageContext";
 import { detectFullLocation, LocationData } from "../../lib/geolocation";
 import TelegramSim from "../../components/TelegramSim";
+import EligibilityTracker from "../../components/profile/EligibilityTracker";
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -784,6 +785,13 @@ export default function DashboardPage() {
           )}
         </div>
 
+        
+          {/* Eligibility Tracker */}
+          {profile.isLoggedIn && (
+            <EligibilityTracker />
+          )}
+
+
         {/* Right: Telegram Bot Alert Center */}
         <div className="w-full z-10">
           <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-5">
@@ -944,3 +952,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
