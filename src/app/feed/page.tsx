@@ -36,6 +36,19 @@ function FeedContent() {
   const [urgencyLevel, setUrgencyLevel] = useState("Critical");
   const [notes, setNotes] = useState("");
 
+  // Edit Request Form states
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingRequestId, setEditingRequestId] = useState("");
+  const [editPatientName, setEditPatientName] = useState("");
+  const [editBloodGroup, setEditBloodGroup] = useState<BloodGroup>("O-");
+  const [editHospitalName, setEditHospitalName] = useState("");
+  const [editHospitalLocation, setEditHospitalLocation] = useState("");
+  const [editContactDetails, setEditContactDetails] = useState("");
+  const [editUnitsNeeded, setEditUnitsNeeded] = useState(2);
+  const [editUnitsFulfilled, setEditUnitsFulfilled] = useState(0);
+  const [editUrgencyLevel, setEditUrgencyLevel] = useState<UrgencyLevel>("Critical");
+  const [editNotes, setEditNotes] = useState("");
+
   const userProfile = db.getUserProfile();
 
   const loadData = () => {
@@ -85,6 +98,58 @@ function FeedContent() {
     setNotes("");
     setIsFormOpen(false);
     loadData();
+  };
+
+  const handleOpenEdit = (req: any) => {
+    setEditingRequestId(req.id);
+    setEditPatientName(req.patientName);
+    setEditBloodGroup(req.bloodGroup);
+    setEditHospitalName(req.hospitalName);
+    setEditHospitalLocation(req.hospitalLocation || "");
+    setEditContactDetails(req.contactDetails || "");
+    setEditUnitsNeeded(req.unitsNeeded);
+    setEditUnitsFulfilled(req.unitsFulfilled || 0);
+    setEditUrgencyLevel(req.urgencyLevel);
+    setEditNotes(req.notes || "");
+    setIsEditFormOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editPatientName || !editHospitalName || !editHospitalLocation || !editContactDetails) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    const result = db.updateRequest(editingRequestId, {
+      patientName: editPatientName,
+      bloodGroup: editBloodGroup,
+      hospitalName: editHospitalName,
+      hospitalLocation: editHospitalLocation,
+      contactDetails: editContactDetails,
+      unitsNeeded: editUnitsNeeded,
+      unitsFulfilled: editUnitsFulfilled,
+      urgencyLevel: editUrgencyLevel,
+      notes: editNotes || ("Severe blood emergency for " + editBloodGroup + " at " + editHospitalName + ".")
+    });
+
+    if (result.success) {
+      setIsEditFormOpen(false);
+      loadData();
+    } else {
+      alert(result.message);
+    }
+  };
+
+  const handleDeleteRequest = (req: any) => {
+    if (confirm("Are you sure you want to delete patient " + req.patientName + "'s blood request? This will permanently remove it from the public feed.")) {
+      const result = db.deleteRequest(req.id);
+      if (result.success) {
+        loadData();
+      } else {
+        alert(result.message);
+      }
+    }
   };
 
   const handleOpenPoster = (req: any) => {
@@ -221,6 +286,8 @@ function FeedContent() {
                 onUpdate={loadData}
                 onOpenPoster={handleOpenPoster}
                 onMarkFulfilled={handleMarkFulfilled}
+                onEdit={handleOpenEdit}
+                onDelete={handleDeleteRequest}
               />
             ))}
           </div>
@@ -365,6 +432,173 @@ function FeedContent() {
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon py-3 text-sm font-bold text-white hover:shadow-[0_0_15px_rgba(255,0,60,0.3)]"
               >
                 <Plus className="h-4 w-4" /> Dispatch Request
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Request Form Modal Popup */}
+      {isEditFormOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-brand-charcoal rounded-2xl border border-brand-red-neon/30 p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-5">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-brand-red-neon" />
+                <h2 className="text-lg font-bold text-white uppercase tracking-wider">Edit Emergency Request</h2>
+              </div>
+              <button
+                onClick={() => setIsEditFormOpen(false)}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Patient Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Karan Malhotra"
+                  value={editPatientName}
+                  onChange={(e) => setEditPatientName(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Blood Group *</label>
+                  <select
+                    value={editBloodGroup}
+                    onChange={(e) => setEditBloodGroup(e.target.value as BloodGroup)}
+                    className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                  >
+                    <option value="O-">O- (Universal)</option>
+                    <option value="O+">O+</option>
+                    <option value="A-">A-</option>
+                    <option value="A+">A+</option>
+                    <option value="B-">B-</option>
+                    <option value="B+">B+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="AB+">AB+</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Emergency Level *</label>
+                  <select
+                    value={editUrgencyLevel}
+                    onChange={(e) => setEditUrgencyLevel(e.target.value as UrgencyLevel)}
+                    className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                  >
+                    <option value="Critical">Critical (45m)</option>
+                    <option value="ICU">ICU Bed (60m)</option>
+                    <option value="Rare Blood">Rare Blood (90m)</option>
+                    <option value="Surgery">Surgery (2h)</option>
+                    <option value="Urgent">Urgent (4h)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Hospital Center *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Apollo Hospital"
+                  value={editHospitalName}
+                  onChange={(e) => setEditHospitalName(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Hospital Location *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cunningham Road, Bengaluru"
+                  value={editHospitalLocation}
+                  onChange={(e) => setEditHospitalLocation(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Contact Details *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Phone or Attendant"
+                    value={editContactDetails}
+                    onChange={(e) => setEditContactDetails(e.target.value)}
+                    className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Units Required</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    max={10}
+                    value={editUnitsNeeded}
+                    onChange={(e) => setEditUnitsNeeded(parseInt(e.target.value) || 1)}
+                    className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-brand-black/40 border border-white/5 p-3 rounded-xl space-y-3">
+                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fulfillment Adjuster</span>
+                
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-gray-300">Units Received</span>
+                  
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditUnitsFulfilled(prev => Math.max(0, prev - 1))}
+                      className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold transition-all text-xs"
+                    >
+                      -
+                    </button>
+                    <span className="text-sm font-extrabold text-white w-6 text-center">{editUnitsFulfilled}</span>
+                    <button
+                      type="button"
+                      onClick={() => setEditUnitsFulfilled(prev => Math.min(editUnitsNeeded, prev + 1))}
+                      className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold transition-all text-xs"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-gray-500 italic">
+                  Status: {editUnitsFulfilled >= editUnitsNeeded ? 'Will mark as FULFILLED and auto-protect privacy' : 'Active emergency request'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Attendant Notes</label>
+                <textarea
+                  placeholder="Include any specific room numbers or patient details..."
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon py-3 text-sm font-bold text-white hover:shadow-[0_0_15px_rgba(255,0,60,0.3)]"
+              >
+                Save Changes
               </button>
             </form>
           </div>

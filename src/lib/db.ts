@@ -202,6 +202,18 @@ const syncRequestToSupabase = async (req: BloodRequest) => {
   }
 };
 
+const deleteRequestFromSupabase = async (requestId: string) => {
+  try {
+    const { error } = await supabase
+      .from('bloodindo_requests')
+      .delete()
+      .eq('id', requestId);
+    if (error) throw error;
+  } catch (err) {
+    console.warn("Supabase delete request failed (suppressed error overlay)", err instanceof Error ? err.message : String(err));
+  }
+};
+
 const syncAlertToSupabase = async (alert: SystemAlert) => {
   try {
     const { error } = await supabase
@@ -459,6 +471,36 @@ export const db = {
 
       syncRequestToSupabase(req);
       return { success: true, message: 'Request marked as successfully fulfilled.' };
+    }
+    return { success: false, message: 'Request not found.' };
+  },
+
+  updateRequest: (requestId: string, updatedFields: Partial<BloodRequest>): { success: boolean; message: string; request?: BloodRequest } => {
+    const requests = db.getRequests();
+    const reqIndex = requests.findIndex(r => r.id === requestId);
+    if (reqIndex !== -1) {
+      const req = { ...requests[reqIndex], ...updatedFields };
+      if (req.unitsFulfilled >= req.unitsNeeded) {
+        req.status = 'Fulfilled';
+      } else {
+        req.status = 'Active';
+      }
+      requests[reqIndex] = req;
+      db.saveRequests(requests);
+      syncRequestToSupabase(req);
+      return { success: true, message: 'Request updated successfully.', request: req };
+    }
+    return { success: false, message: 'Request not found.' };
+  },
+
+  deleteRequest: (requestId: string): { success: boolean; message: string } => {
+    const requests = db.getRequests();
+    const index = requests.findIndex(r => r.id === requestId);
+    if (index !== -1) {
+      requests.splice(index, 1);
+      db.saveRequests(requests);
+      deleteRequestFromSupabase(requestId);
+      return { success: true, message: 'Request deleted successfully.' };
     }
     return { success: false, message: 'Request not found.' };
   },

@@ -11,9 +11,11 @@ interface EmergencyCardProps {
   onOpenPoster?: (req: BloodRequest) => void;
   onMarkFulfilled?: (req: BloodRequest) => void;
   allowFulfillOverride?: boolean;
+  onEdit?: (req: BloodRequest) => void;
+  onDelete?: (req: BloodRequest) => void;
 }
 
-export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkFulfilled, allowFulfillOverride }: EmergencyCardProps) {
+export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkFulfilled, allowFulfillOverride, onEdit, onDelete }: EmergencyCardProps) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isVolunteered, setIsVolunteered] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -148,28 +150,34 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-white truncate font-sans">{request.patientName}</h3>
+          <h3 className="text-lg font-bold text-white truncate font-sans">
+            {request.status === 'Active' ? request.patientName : "Blood Indo Donor Saved One Life! ❤️"}
+          </h3>
           
           <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
             <MapPin className="h-3 w-3 text-brand-red-neon shrink-0" />
-            <span className="truncate">{request.hospitalName}</span>
+            <span className="truncate">
+              {request.status === 'Active' ? request.hospitalName : "Details redacted for donor & patient privacy"}
+            </span>
           </div>
 
           <div className="text-[10px] text-gray-500 mt-0.5 truncate pl-4">
-            {request.hospitalLocation}
+            {request.status === 'Active' ? request.hospitalLocation : ""}
           </div>
 
           {/* Visible Phone Number */}
-          <div className="flex items-center gap-1.5 text-xs mt-2 bg-brand-red-neon/5 rounded-lg px-2.5 py-1 border border-brand-red-neon/10 w-fit">
-            <Phone className="h-3 w-3 text-brand-red-neon shrink-0 animate-pulse" />
-            <span className="font-semibold text-gray-300">{"Contact: " + request.contactDetails}</span>
-          </div>
+          {request.status === 'Active' && (
+            <div className="flex items-center gap-1.5 text-xs mt-2 bg-brand-red-neon/5 rounded-lg px-2.5 py-1 border border-brand-red-neon/10 w-fit">
+              <Phone className="h-3 w-3 text-brand-red-neon shrink-0 animate-pulse" />
+              <span className="font-semibold text-gray-300">{"Contact: " + request.contactDetails}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Notes */}
       <p className="text-xs text-gray-300 bg-brand-black/40 border border-white/5 rounded-xl p-3 mb-4 leading-relaxed italic">
-        &ldquo;{request.notes}&rdquo;
+        &ldquo;{request.status === 'Active' ? request.notes : "Thank you to our amazing lifesavers! Patient and donor privacy has been secured."}&rdquo;
       </p>
 
       {/* Fulfilled Progress Bar */}
@@ -198,6 +206,25 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
           >
             <CheckCircle2 className="h-4 w-4" /> Received
           </button>
+        )}
+
+        {isCreator && (
+          <>
+            <button
+              onClick={() => onEdit && onEdit(request)}
+              className="flex h-11 px-3 items-center justify-center gap-1.5 rounded-xl bg-brand-charcoal border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white transition-all active:scale-95 text-xs font-bold shrink-0"
+              title="Edit Request"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => onDelete && onDelete(request)}
+              className="flex h-11 px-3 items-center justify-center gap-1.5 rounded-xl bg-red-950/20 border border-red-500/30 text-red-400 hover:bg-red-950/40 hover:text-white transition-all active:scale-95 text-xs font-bold shrink-0"
+              title="Delete Request"
+            >
+              Delete
+            </button>
+          </>
         )}
 
         {onOpenPoster && (
