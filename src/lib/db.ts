@@ -104,53 +104,7 @@ export interface SystemAlert {
   timestamp: string;
 }
 
-export const INITIAL_CAMPS: DonationCamp[] = [
-  {
-    id: "camp_1",
-    campName: "Attingal Blood Donation Drive",
-    organizerName: "Attingal Youth Club & NGO",
-    description: "Join our annual blood donation camp to help local government hospitals stock up for critical surgeries.",
-    eventDate: "2026-06-15",
-    startTime: "09:00",
-    endTime: "14:00",
-    venueName: "Attingal Town Hall",
-    state: "Kerala",
-    district: "Thiruvananthapuram",
-    city: "Attingal",
-    area: "Town Hall Junction",
-    mapsUrl: "https://maps.google.com/?q=Attingal+Town+Hall",
-    contactNumber: "+91 9876543210",
-    registrationLink: "https://bloodundo.in/register-drive",
-    category: "Blood Donation Camp",
-    coverImage: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=600",
-    organizerLogo: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=100",
-    isCompleted: false,
-    createdBy: "admin",
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: "camp_2",
-    campName: "Awareness & Nutrition Camp",
-    organizerName: "Kochi Health Foundation",
-    description: "Educational drive about blood health, anemia prevention, and correct nutrition for regular donors.",
-    eventDate: "2026-06-20",
-    startTime: "10:00",
-    endTime: "13:00",
-    venueName: "YMCA Hall, Kochi",
-    state: "Kerala",
-    district: "Ernakulam",
-    city: "Kochi",
-    area: "Kadavanthra",
-    mapsUrl: "https://maps.google.com/?q=YMCA+Kochi",
-    contactNumber: "+91 9447123456",
-    category: "Awareness Program",
-    coverImage: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=600",
-    organizerLogo: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=100",
-    isCompleted: false,
-    createdBy: "admin",
-    createdAt: new Date().toISOString()
-  }
-];
+export const INITIAL_CAMPS: DonationCamp[] = [];
 
 const INITIAL_DONORS: Donor[] = [
   { id: '1', name: 'Raj Kumar', bloodGroup: 'O+', latitude: 12.9716, longitude: 77.5946, distance: 2.5, city: 'Bengaluru', phone: '+91 90000 00001', available: true, avatar: '🏥', badges: ['Fast Responder'], streak: 3 },
@@ -918,31 +872,40 @@ export const db = {
 
   sendCampTelegramAlert: async (camp: DonationCamp) => {
     try {
-      // Match profile location (State, District, City) exactly!
-      const { data: matchedProfiles, error } = await supabase
+      // 1. Fetch all profiles that have an active Telegram account
+      const { data: allProfiles, error } = await supabase
         .from('bloodindo_profiles')
         .select('*')
-        .eq('available_to_donate', true)
-        .eq('state', camp.state)
-        .eq('district', camp.district)
-        .eq('city', camp.city);
+        .not('telegram_chat_id', 'is', null);
 
       if (error) throw error;
-      if (!matchedProfiles || matchedProfiles.length === 0) return;
+      if (!allProfiles || allProfiles.length === 0) return;
 
-      for (const profile of matchedProfiles) {
+      // 2. Perform case-insensitive & trimmed location matching in JavaScript for 100% precision
+      for (const profile of allProfiles) {
         if (!profile.telegram_chat_id) continue;
         if (profile.telegram_chat_id.startsWith('CODE:')) continue;
 
-        // Custom Telegram Alert Message (New Blood Donation Camp Near You)
-        const text = `🩸 <b>New Blood Donation Camp Near You</b>\n\n` +
-          `<b>Camp:</b> ${camp.campName}\n` +
-          `<b>Date:</b> ${camp.eventDate} (${camp.startTime} - ${camp.endTime})\n` +
-          `<b>Location:</b> ${camp.venueName}, ${camp.city}, ${camp.district}\n\n` +
-          `<i>A blood donation camp has been scheduled in your area.</i>\n\n` +
-          `👉 <a href="https://bloodundo.in/camps">View Details and Participate</a>`;
+        const pState = (profile.state || '').trim().toLowerCase();
+        const pDistrict = (profile.district || '').trim().toLowerCase();
+        const pCity = (profile.city || '').trim().toLowerCase();
 
-        await db.sendTelegramMessage(profile.telegram_chat_id, text);
+        const cState = (camp.state || '').trim().toLowerCase();
+        const cDistrict = (camp.district || '').trim().toLowerCase();
+        const cCity = (camp.city || '').trim().toLowerCase();
+
+        // Exact State, District, and City match!
+        if (pState === cState && pDistrict === cDistrict && pCity === cCity) {
+          // Custom Telegram Alert Message (New Blood Donation Camp Near You)
+          const text = `🩸 <b>New Blood Donation Camp Near You</b>\n\n` +
+            `<b>Camp:</b> ${camp.campName}\n` +
+            `<b>Date:</b> ${camp.eventDate} (${camp.startTime} - ${camp.endTime})\n` +
+            `<b>Location:</b> ${camp.venueName}, ${camp.city}, ${camp.district}\n\n` +
+            `<i>A blood donation camp has been scheduled in your area.</i>\n\n` +
+            `👉 <a href="https://bloodundo.in/camps">View Details and Participate</a>`;
+
+          await db.sendTelegramMessage(profile.telegram_chat_id, text);
+        }
       }
     } catch (err) {
       console.error('[Alert Engine] Camp telegram alert failed:', err);
