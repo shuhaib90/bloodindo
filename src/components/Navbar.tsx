@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Flame, Bell, Menu, X, ShieldAlert, Heart, User, Building2, Terminal } from 'lucide-react';
+import { Flame, Bell, Menu, X, ShieldAlert, Heart, User, Building2, Terminal, Calendar } from 'lucide-react';
 import { db } from '../lib/db';
 import { useTranslation } from './LanguageContext';
 
@@ -60,6 +60,7 @@ export default function Navbar() {
     const navItems = [
     { name: t("nav_emergency_feed"), href: '/feed', icon: ShieldAlert },
     { name: t("nav_donor_radar"), href: '/donors', icon: Heart },
+    { name: "Camps & Events", href: '/camps', icon: Calendar },
     ...(isLoggedIn ? [{ name: t("nav_my_profile"), href: '/dashboard', icon: User }] : []),
     { name: t("nav_hospital_hub"), href: '/hospital', icon: Building2 },
   ];

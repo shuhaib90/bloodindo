@@ -44,6 +44,30 @@ export interface Donor {
   lastDonationDate?: string;
 }
 
+export interface DonationCamp {
+  id: string;
+  campName: string;
+  organizerName: string;
+  description: string;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  venueName: string;
+  state: string;
+  district: string;
+  city: string;
+  area: string;
+  mapsUrl: string;
+  contactNumber: string;
+  registrationLink?: string;
+  category: 'Blood Donation Camp' | 'Awareness Program' | 'Medical Camp' | 'Hospital Drive' | 'NGO Event' | 'Emergency Donation Drive';
+  coverImage?: string;
+  organizerLogo?: string;
+  isCompleted: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
 export interface BloodRequest {
   id: string;
   patientName: string;
@@ -79,6 +103,54 @@ export interface SystemAlert {
   message: string;
   timestamp: string;
 }
+
+export const INITIAL_CAMPS: DonationCamp[] = [
+  {
+    id: "camp_1",
+    campName: "Attingal Blood Donation Drive",
+    organizerName: "Attingal Youth Club & NGO",
+    description: "Join our annual blood donation camp to help local government hospitals stock up for critical surgeries.",
+    eventDate: "2026-06-15",
+    startTime: "09:00",
+    endTime: "14:00",
+    venueName: "Attingal Town Hall",
+    state: "Kerala",
+    district: "Thiruvananthapuram",
+    city: "Attingal",
+    area: "Town Hall Junction",
+    mapsUrl: "https://maps.google.com/?q=Attingal+Town+Hall",
+    contactNumber: "+91 9876543210",
+    registrationLink: "https://bloodundo.in/register-drive",
+    category: "Blood Donation Camp",
+    coverImage: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=600",
+    organizerLogo: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=100",
+    isCompleted: false,
+    createdBy: "admin",
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: "camp_2",
+    campName: "Awareness & Nutrition Camp",
+    organizerName: "Kochi Health Foundation",
+    description: "Educational drive about blood health, anemia prevention, and correct nutrition for regular donors.",
+    eventDate: "2026-06-20",
+    startTime: "10:00",
+    endTime: "13:00",
+    venueName: "YMCA Hall, Kochi",
+    state: "Kerala",
+    district: "Ernakulam",
+    city: "Kochi",
+    area: "Kadavanthra",
+    mapsUrl: "https://maps.google.com/?q=YMCA+Kochi",
+    contactNumber: "+91 9447123456",
+    category: "Awareness Program",
+    coverImage: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=600",
+    organizerLogo: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=100",
+    isCompleted: false,
+    createdBy: "admin",
+    createdAt: new Date().toISOString()
+  }
+];
 
 const INITIAL_DONORS: Donor[] = [
   { id: '1', name: 'Raj Kumar', bloodGroup: 'O+', latitude: 12.9716, longitude: 77.5946, distance: 2.5, city: 'Bengaluru', phone: '+91 90000 00001', available: true, avatar: '🏥', badges: ['Fast Responder'], streak: 3 },
@@ -286,6 +358,39 @@ export const db = {
         }
       }
       
+      // Synchronize Camps & Events from Supabase
+      try {
+        const { data: dbCamps } = await supabase.from('bloodindo_camps').select('*').order('event_date', { ascending: true });
+        if (dbCamps && dbCamps.length > 0) {
+          const mappedCamps = dbCamps.map(c => ({
+            id: c.id,
+            campName: c.camp_name,
+            organizerName: c.organizer_name,
+            description: c.description,
+            eventDate: c.event_date,
+            startTime: c.start_time,
+            endTime: c.end_time,
+            venueName: c.venue_name,
+            state: c.state,
+            district: c.district,
+            city: c.city,
+            area: c.area,
+            mapsUrl: c.maps_url,
+            contactNumber: c.contact_number,
+            registrationLink: c.registration_link,
+            category: c.category as any,
+            coverImage: c.cover_image,
+            organizerLogo: c.organizer_logo,
+            isCompleted: c.is_completed,
+            createdBy: c.created_by,
+            createdAt: c.created_at
+          }));
+          setStorageItem('blood_camps', mappedCamps);
+        }
+      } catch (err) {
+        console.warn('[Supabase Sync] Failed to fetch camps from Supabase (table may not exist yet):', err);
+      }
+
       const { data: dbAlerts } = await supabase.from('bloodindo_alerts').select('*').order('timestamp', { ascending: false }).limit(50);
       if (dbAlerts && dbAlerts.length > 0) {
         const mapped = dbAlerts.map(a => ({
@@ -717,6 +822,130 @@ export const db = {
     } catch (e) {
       console.error("Failed to send Telegram message", e);
       return false;
+    }
+  },
+
+  getCamps: (): DonationCamp[] => {
+    return getStorageItem('blood_camps', INITIAL_CAMPS);
+  },
+
+  saveCamps: (camps: DonationCamp[]): void => {
+    setStorageItem('blood_camps', camps);
+  },
+
+  createCamp: (campData: Omit<DonationCamp, 'id' | 'createdAt' | 'isCompleted'>): DonationCamp => {
+    const camps = db.getCamps();
+    const newCamp: DonationCamp = {
+      ...campData,
+      id: "camp_" + Date.now(),
+      createdAt: new Date().toISOString(),
+      isCompleted: false
+    };
+    camps.unshift(newCamp);
+    db.saveCamps(camps);
+
+    db.addSystemAlert({
+      type: 'system',
+      message: `NEW CAMP: ${newCamp.campName} by ${newCamp.organizerName} scheduled on ${newCamp.eventDate}.`
+    });
+
+    // Asynchronously sync to Supabase and trigger Telegram alerts
+    db.syncCampToSupabase(newCamp);
+    db.sendCampTelegramAlert(newCamp);
+
+    return newCamp;
+  },
+
+  updateCamp: (id: string, updatedData: Partial<DonationCamp>): DonationCamp | null => {
+    const camps = db.getCamps();
+    const idx = camps.findIndex(c => c.id === id);
+    if (idx === -1) return null;
+
+    const updatedCamp = {
+      ...camps[idx],
+      ...updatedData
+    };
+    camps[idx] = updatedCamp;
+    db.saveCamps(camps);
+
+    db.syncCampToSupabase(updatedCamp);
+    return updatedCamp;
+  },
+
+  deleteCamp: (id: string): boolean => {
+    const camps = db.getCamps();
+    const filtered = camps.filter(c => c.id !== id);
+    if (filtered.length === camps.length) return false;
+
+    db.saveCamps(filtered);
+    
+    // Asynchronously delete from Supabase
+    supabase.from('bloodindo_camps').delete().eq('id', id).then();
+    return true;
+  },
+
+  syncCampToSupabase: async (camp: DonationCamp) => {
+    try {
+      await supabase
+        .from('bloodindo_camps')
+        .upsert({
+          id: camp.id,
+          camp_name: camp.campName,
+          organizer_name: camp.organizerName,
+          description: camp.description,
+          event_date: camp.eventDate,
+          start_time: camp.startTime,
+          end_time: camp.endTime,
+          venue_name: camp.venueName,
+          state: camp.state,
+          district: camp.district,
+          city: camp.city,
+          area: camp.area,
+          maps_url: camp.mapsUrl,
+          contact_number: camp.contactNumber,
+          registration_link: camp.registrationLink,
+          category: camp.category,
+          cover_image: camp.coverImage,
+          organizer_logo: camp.organizerLogo,
+          is_completed: camp.isCompleted,
+          created_by: camp.createdBy,
+          created_at: camp.createdAt
+        });
+    } catch (e) {
+      console.warn('[Supabase Sync] bloodindo_camps sync failed (table may not exist yet):', e);
+    }
+  },
+
+  sendCampTelegramAlert: async (camp: DonationCamp) => {
+    try {
+      // Match profile location (State, District, City) exactly!
+      const { data: matchedProfiles, error } = await supabase
+        .from('bloodindo_profiles')
+        .select('*')
+        .eq('available_to_donate', true)
+        .eq('state', camp.state)
+        .eq('district', camp.district)
+        .eq('city', camp.city);
+
+      if (error) throw error;
+      if (!matchedProfiles || matchedProfiles.length === 0) return;
+
+      for (const profile of matchedProfiles) {
+        if (!profile.telegram_chat_id) continue;
+        if (profile.telegram_chat_id.startsWith('CODE:')) continue;
+
+        // Custom Telegram Alert Message (New Blood Donation Camp Near You)
+        const text = `🩸 <b>New Blood Donation Camp Near You</b>\n\n` +
+          `<b>Camp:</b> ${camp.campName}\n` +
+          `<b>Date:</b> ${camp.eventDate} (${camp.startTime} - ${camp.endTime})\n` +
+          `<b>Location:</b> ${camp.venueName}, ${camp.city}, ${camp.district}\n\n` +
+          `<i>A blood donation camp has been scheduled in your area.</i>\n\n` +
+          `👉 <a href="https://bloodundo.in/camps">View Details and Participate</a>`;
+
+        await db.sendTelegramMessage(profile.telegram_chat_id, text);
+      }
+    } catch (err) {
+      console.error('[Alert Engine] Camp telegram alert failed:', err);
     }
   },
 
