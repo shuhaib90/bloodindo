@@ -21,7 +21,28 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
   const [loading, setLoading] = useState(false);
 
   const userProfile = db.getUserProfile();
-  const isCreator = request.contactDetails === userProfile.phone || allowFulfillOverride;
+  const [isCreator, setIsCreator] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const normalize = (p?: string): string => (p || '').replace(/\D/g, '').slice(-10);
+      const isPhoneMatch = userProfile.phone && request.contactDetails && 
+        normalize(userProfile.phone) === normalize(request.contactDetails);
+      
+      if (isPhoneMatch || allowFulfillOverride) {
+        setIsCreator(true);
+        return;
+      }
+
+      try {
+        const stored = localStorage.getItem('my_created_requests');
+        const ids = stored ? JSON.parse(stored) : [];
+        setIsCreator(ids.includes(request.id));
+      } catch (e) {
+        setIsCreator(false);
+      }
+    }
+  }, [request.id, request.contactDetails, userProfile.phone, allowFulfillOverride]);
 
   // Countdown timer logic
   useEffect(() => {

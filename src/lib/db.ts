@@ -557,18 +557,29 @@ export const db = {
       }
     }
 
-    // Native Browser Notification
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      try {
-        new Notification(`🚨 Emergency Alert (${newRequest.bloodGroup})`, {
+    // Native Mobile/Desktop Service Worker Push Notification
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.showNotification(`🚨 Emergency Alert (${newRequest.bloodGroup})`, {
           body: `Patient ${newRequest.patientName} needs blood at ${newRequest.hospitalName}. Urgency: ${newRequest.urgencyLevel}.`,
           icon: '/logo.png',
           badge: '/logo.png',
           tag: newRequest.id
-        });
-      } catch (e) {
-        console.warn('Native notification failed:', e);
-      }
+        } as any);
+      }).catch((err) => {
+        console.warn('Service worker notification failed, falling back to window Notification:', err);
+        if ("Notification" in window && Notification.permission === "granted") {
+          try {
+            new Notification(`🚨 Emergency Alert (${newRequest.bloodGroup})`, {
+              body: `Patient ${newRequest.patientName} needs blood at ${newRequest.hospitalName}. Urgency: ${newRequest.urgencyLevel}.`,
+              icon: '/logo.png',
+              tag: newRequest.id
+            });
+          } catch (e) {
+            console.warn('Native fallback notification failed:', e);
+          }
+        }
+      });
     }
     
     return newRequest;
@@ -619,18 +630,29 @@ export const db = {
         message: "BLOOD RECEIVED: Patient " + req.patientName + " (" + req.bloodGroup + ") successfully received blood."
       });
 
-      // Native Browser Notification
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-        try {
-          new Notification("❤️ Request Fulfilled!", {
+      // Native Mobile/Desktop Service Worker Push Notification
+      if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification("❤️ Request Fulfilled!", {
             body: `Patient ${req.patientName} (${req.bloodGroup}) successfully received blood. Thank you to all lifesavers!`,
             icon: '/logo.png',
             badge: '/logo.png',
             tag: req.id + '_fulfilled'
-          });
-        } catch (e) {
-          console.warn('Native notification failed:', e);
-        }
+          } as any);
+        }).catch((err) => {
+          console.warn('Service worker notification failed, falling back to window Notification:', err);
+          if ("Notification" in window && Notification.permission === "granted") {
+            try {
+              new Notification("❤️ Request Fulfilled!", {
+                body: `Patient ${req.patientName} (${req.bloodGroup}) successfully received blood. Thank you to all lifesavers!`,
+                icon: '/logo.png',
+                tag: req.id + '_fulfilled'
+              });
+            } catch (e) {
+              console.warn('Native fallback notification failed:', e);
+            }
+          }
+        });
       }
 
       await syncRequestToSupabase(req);
@@ -966,7 +988,6 @@ export const db = {
       const { data: dbActiveProfiles, error: fetchError } = await supabase
         .from('bloodindo_profiles')
         .select('*')
-        .eq('available_to_donate', true)
         .eq('blood_group', req.bloodGroup);
 
       if (fetchError) throw fetchError;
