@@ -9,7 +9,7 @@ import { useTranslation } from "../components/LanguageContext";
 export default function Home() {
   const { t } = useTranslation();
   const [stats, setStats] = useState({ active: 0, donors: 0, saved: 432 });
-  const [alerts, setAlerts] = useState<any[]>([]);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   const [patientName, setPatientName] = useState("");
@@ -22,7 +22,7 @@ export default function Home() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    const loadStatsAndAlerts = () => {
+    const loadStats = () => {
       const requests = db.getRequests();
       const active = requests.filter(r => r.status === "Active").length;
       const donors = db.getDonors().filter(d => d.available).length;
@@ -32,12 +32,10 @@ export default function Home() {
         donors,
         saved: 450 + (requests.filter(r => r.status === "Fulfilled").length * 2)
       });
-
-      setAlerts(db.getSystemAlerts().slice(0, 5));
     };
 
-    loadStatsAndAlerts();
-    const interval = setInterval(loadStatsAndAlerts, 3000);
+    loadStats();
+    const interval = setInterval(loadStats, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -91,17 +89,6 @@ export default function Home() {
       <div className="absolute -right-1/4 -bottom-1/4 h-[80vw] w-[80vw] rounded-full bg-brand-red-neon/5 blur-[120px] pointer-events-none"></div>
 
       <div className="w-full max-w-5xl z-10 flex flex-col items-center text-center">
-        <div className="w-full max-w-2xl mb-8 glass-panel bg-brand-red-dark/10 border border-brand-red-neon/20 rounded-full px-5 py-2.5 flex items-center gap-3 overflow-hidden shadow-[0_0_15px_rgba(255,0,60,0.05)]">
-          <span className="flex h-2 w-2 shrink-0 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-red-neon opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-red-neon"></span>
-          </span>
-          
-          <div className="flex-1 text-xs font-bold text-brand-red-glow uppercase tracking-wider overflow-hidden whitespace-nowrap text-ellipsis text-left">
-            <span className="text-gray-400 font-medium lowercase italic mr-2">latest alert:</span>
-            {alerts[0]?.message || "Initializing secure emergency matching gateways..."}
-          </div>
-        </div>
 
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white mb-4 uppercase font-sans">
           Securing Lives<br/>
