@@ -152,17 +152,11 @@ export default function PosterGenerator({ request, isOpen, onClose }: PosterGene
             <div className="relative w-64 h-[440px] rounded-2xl bg-[#fafafa] border border-zinc-200 flex flex-col justify-between p-4 overflow-hidden shadow-2xl text-black">
               {/* Top Row: Logos */}
               <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-                <div className="flex items-center gap-1">
-                  {/* PMI Crest Red Cross Vector */}
-                  <svg viewBox="0 0 100 100" className="h-7 w-7 shrink-0">
-                    <path d="M50 5 C55 15, 65 15, 75 15 C85 25, 85 35, 85 45 C85 55, 95 65, 85 75 C75 85, 65 85, 55 85 C45 85, 35 95, 25 85 C15 75, 15 65, 15 55 C5 45, 15 35, 15 25 C15 15, 25 15, 35 15 Z" fill="none" stroke="#ff003c" strokeWidth="3" />
-                    <circle cx="50" cy="50" r="32" fill="white" stroke="#ff003c" strokeWidth="2" />
-                    <rect x="42" y="26" width="16" height="48" fill="#ff003c" rx="1.5" />
-                    <rect x="26" y="42" width="48" height="16" fill="#ff003c" rx="1.5" />
-                  </svg>
+                <div className="flex items-center gap-1.5">
+                  <img src="/logo.png" alt="bloodundo.in logo" className="h-8 w-8 shrink-0 object-contain" />
                   <div className="text-left leading-none">
-                    <div className="text-[7px] font-black text-[#ff003c] uppercase tracking-wider">Palang Merah</div>
-                    <div className="text-[7px] font-black text-[#ff003c] uppercase tracking-wider">Indonesia</div>
+                    <div className="text-[9px] font-black text-[#ff003c] tracking-tight">bloodundo.in</div>
+                    <div className="text-[5.5px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Kerala's Lifesaver</div>
                   </div>
                 </div>
 
@@ -250,14 +244,12 @@ export default function PosterGenerator({ request, isOpen, onClose }: PosterGene
             <div className="relative w-72 h-72 rounded-2xl bg-[#fafafa] border border-zinc-200 flex flex-col justify-between p-3.5 overflow-hidden shadow-2xl text-black">
               {/* Top Header Row */}
               <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5">
-                <div className="flex items-center gap-1">
-                  <svg viewBox="0 0 100 100" className="h-6 w-6 shrink-0">
-                    <path d="M50 5 C55 15, 65 15, 75 15 C85 25, 85 35, 85 45 C85 55, 95 65, 85 75 C75 85, 65 85, 55 85 C45 85, 35 95, 25 85 C15 75, 15 65, 15 55 C5 45, 15 35, 15 25 C15 15, 25 15, 35 15 Z" fill="none" stroke="#ff003c" strokeWidth="3" />
-                    <circle cx="50" cy="50" r="32" fill="white" stroke="#ff003c" strokeWidth="2" />
-                    <rect x="42" y="26" width="16" height="48" fill="#ff003c" rx="1.5" />
-                    <rect x="26" y="42" width="48" height="16" fill="#ff003c" rx="1.5" />
-                  </svg>
-                  <span className="text-[6.5px] font-black text-[#ff003c] uppercase leading-none tracking-wide">Palang Merah<br/>Indonesia</span>
+                <div className="flex items-center gap-1.5">
+                  <img src="/logo.png" alt="bloodundo.in logo" className="h-7 w-7 shrink-0 object-contain" />
+                  <div className="text-left leading-none">
+                    <div className="text-[8px] font-black text-[#ff003c] tracking-tight">bloodundo.in</div>
+                    <div className="text-[5px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Kerala's Lifesaver</div>
+                  </div>
                 </div>
 
                 <div className="border-[1.5px] border-black px-1.5 py-0.5 text-center font-black tracking-widest text-black text-[6.5px] uppercase leading-none">
