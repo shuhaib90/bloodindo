@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "../components/LanguageContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PWAInstall from "@/components/PWAInstall";
 import WarningModal from "@/components/WarningModal";
 import TelegramBotWorker from "@/components/TelegramBotWorker";
 
@@ -20,6 +21,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Blood Indo - Emergency Blood Donation Platform",
   description: "Real-time emergency blood donation matching and life-saving alerts. Connect with nearby donors instantly.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Blood Indo",
+  },
 };
 
 export default function RootLayout({
@@ -35,6 +42,7 @@ export default function RootLayout({
     >
       <body className="bg-brand-black text-gray-100 min-h-screen flex flex-col">
         <LanguageProvider>
+        <PWAInstall />
         <TelegramBotWorker />
         <WarningModal />
         <Navbar />

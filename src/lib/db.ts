@@ -544,6 +544,20 @@ export const db = {
     
     // Trigger matching alerts immediately
     db.sendMatchingAlerts(newRequest);
+
+    // Native Browser Notification
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification(`🚨 Emergency Alert (${newRequest.bloodGroup})`, {
+          body: `Patient ${newRequest.patientName} needs blood at ${newRequest.hospitalName}. Urgency: ${newRequest.urgencyLevel}.`,
+          icon: '/logo.png',
+          badge: '/logo.png',
+          tag: newRequest.id
+        });
+      } catch (e) {
+        console.warn('Native notification failed:', e);
+      }
+    }
     
     return newRequest;
   },
@@ -592,6 +606,20 @@ export const db = {
         type: 'volunteer',
         message: "BLOOD RECEIVED: Patient " + req.patientName + " (" + req.bloodGroup + ") successfully received blood."
       });
+
+      // Native Browser Notification
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification("❤️ Request Fulfilled!", {
+            body: `Patient ${req.patientName} (${req.bloodGroup}) successfully received blood. Thank you to all lifesavers!`,
+            icon: '/logo.png',
+            badge: '/logo.png',
+            tag: req.id + '_fulfilled'
+          });
+        } catch (e) {
+          console.warn('Native notification failed:', e);
+        }
+      }
 
       await syncRequestToSupabase(req);
       return { success: true, message: 'Request marked as successfully fulfilled.' };
