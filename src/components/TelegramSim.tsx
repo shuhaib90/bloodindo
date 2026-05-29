@@ -224,10 +224,13 @@ export default function TelegramSim() {
         <div className="bg-[#182533] p-3 border-t border-zinc-900 flex flex-col gap-2">
           {!isLinked ? (
             <button
-              onClick={handleShareContact}
+              onClick={() => {
+                handleShareContact();
+                window.open('https://t.me/bloodundobot', '_blank');
+              }}
               className="w-full py-2.5 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold rounded-lg text-xs shadow-md shadow-red-950/30 transition-all flex items-center justify-center gap-2 transform active:scale-[0.98]"
             >
-              Share Contact 📞
+              Connect Telegram 📞
             </button>
           ) : (
             <div className="flex items-center justify-center py-2 px-3 bg-emerald-950/20 border border-emerald-500/20 rounded-lg text-emerald-400 gap-1.5 text-center">
