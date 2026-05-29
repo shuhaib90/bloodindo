@@ -4,6 +4,7 @@ export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-'
 export type UrgencyLevel = 'Critical' | 'High' | 'Standard' | 'Rare Blood';
 
 export interface UserProfile {
+  id?: string;
   name: string;
   email: string;
   phone: string;
@@ -113,7 +114,10 @@ const syncProfileToSupabase = async (profile: UserProfile) => {
     let query = supabase.from('bloodindo_profiles').select('id');
     let identifierFound = false;
 
-    if (profile.email) {
+    if (profile.id) {
+      query = query.eq('id', profile.id);
+      identifierFound = true;
+    } else if (profile.email) {
       query = query.eq('email', profile.email);
       identifierFound = true;
     } else if (profile.phone) {
@@ -253,6 +257,7 @@ export const db = {
       }
 
       const defaultProfile: UserProfile = {
+        id: '',
         name: '',
         email: '',
         phone: '',
@@ -295,6 +300,7 @@ export const db = {
           const { data: dbProfile } = await query.limit(1).maybeSingle();
           if (dbProfile) {
             const mapped: UserProfile = {
+              id: dbProfile.id,
               name: dbProfile.name || '',
               email: dbProfile.email || '',
               phone: dbProfile.phone || '',
@@ -520,6 +526,7 @@ export const db = {
 
   getUserProfile: (): UserProfile => {
     const defaultProfile: UserProfile = {
+      id: '',
       name: '',
       email: '',
       phone: '',

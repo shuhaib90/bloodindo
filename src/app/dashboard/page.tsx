@@ -79,6 +79,7 @@ export default function DashboardPage() {
         if (dbProfile) {
           // If a profile exists, load it
           const updatedProfile: UserProfile = {
+            id: dbProfile.id,
             name: dbProfile.name || user.user_metadata?.full_name || 'Google User',
             email: dbProfile.email || user.email || '',
             phone: dbProfile.phone || '',
@@ -116,6 +117,7 @@ export default function DashboardPage() {
         } else {
           // Profile doesn't exist, create a clean one for them!
           const newProfile: UserProfile = {
+            id: user.id,
             name: user.user_metadata?.full_name || 'Google User',
             email: user.email || '',
             phone: '',
@@ -279,6 +281,7 @@ export default function DashboardPage() {
       const apiUser = data.user;
       
       const updatedProfile: UserProfile = {
+        id: apiUser.id,
         name: apiUser.name,
         email: apiUser.email || '',
         phone: apiUser.phone || '',
