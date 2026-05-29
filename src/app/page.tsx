@@ -8,7 +8,7 @@ import { useTranslation } from "../components/LanguageContext";
 
 export default function Home() {
   const { t } = useTranslation();
-  const [stats, setStats] = useState({ active: 0, donors: 0, saved: 432 });
+  const [stats, setStats] = useState({ active: 0, donors: 0, saved: 0 });
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
@@ -30,7 +30,7 @@ export default function Home() {
       setStats({
         active,
         donors,
-        saved: 450 + (requests.filter(r => r.status === "Fulfilled").length * 2)
+        saved: requests.filter(r => r.status === "Fulfilled").length
       });
     };
 
