@@ -237,12 +237,17 @@ const syncAlertToSupabase = async (alert: SystemAlert) => {
 export const db = {
   initializeSupabaseSync: () => {
     db.syncLocalFromSupabase();
+    if (typeof window !== 'undefined' && !(window as any).supabaseSyncInterval) {
+      (window as any).supabaseSyncInterval = setInterval(() => {
+        db.syncLocalFromSupabase();
+      }, 5000);
+    }
   },
   syncLocalFromSupabase: async (): Promise<void> => {
     try {
       console.log("[Supabase Sync] Fetching master data from Supabase...");
       const { data: dbRequests } = await supabase.from('bloodindo_requests').select('*').order('created_at', { ascending: false });
-      if (dbRequests && dbRequests.length > 0) {
+      if (dbRequests) {
         const mapped = dbRequests.map(r => ({
           id: r.id,
           patientName: r.patient_name,
