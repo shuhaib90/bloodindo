@@ -64,8 +64,99 @@ export default function DashboardPage() {
     }
   };
 
+  const checkSession = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // User is logged in via Supabase Auth (e.g. Google Login)
+        // Let's fetch their profile from the database
+        const { data: dbProfile } = await supabase
+          .from('bloodindo_profiles')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle();
+
+        if (dbProfile) {
+          // If a profile exists, load it
+          const updatedProfile: UserProfile = {
+            name: dbProfile.name || user.user_metadata?.full_name || 'Google User',
+            email: dbProfile.email || user.email || '',
+            phone: dbProfile.phone || '',
+            username: dbProfile.username || user.email?.split('@')[0] || 'google_user',
+            bloodGroup: dbProfile.blood_group as BloodGroup || '',
+            city: dbProfile.city || '',
+            country: dbProfile.country || '',
+            state: dbProfile.state || '',
+            district: dbProfile.district || '',
+            area: dbProfile.area || '',
+            latitude: dbProfile.latitude || 0,
+            longitude: dbProfile.longitude || 0,
+            streak: dbProfile.streak || 0,
+            points: dbProfile.points || 0,
+            donationsCount: dbProfile.donations_count || 0,
+            badges: dbProfile.badges || [],
+            isLoggedIn: true,
+            availableToDonate: dbProfile.available_to_donate || false,
+            telegramChatId: dbProfile.telegram_chat_id || ''
+          };
+          db.saveUserProfile(updatedProfile);
+          setProfile(updatedProfile);
+
+          setName(updatedProfile.name);
+          setPhone(updatedProfile.phone);
+          setBloodGroup(updatedProfile.bloodGroup);
+          setCity(updatedProfile.city);
+          setCountry(updatedProfile.country || '');
+          setStateName(updatedProfile.state || '');
+          setDistrict(updatedProfile.district || '');
+          setArea(updatedProfile.area || '');
+          setLatitude(updatedProfile.latitude || 0);
+          setLongitude(updatedProfile.longitude || 0);
+          setAvailableToDonate(updatedProfile.availableToDonate || false);
+        } else {
+          // Profile doesn't exist, create a clean one for them!
+          const newProfile: UserProfile = {
+            name: user.user_metadata?.full_name || 'Google User',
+            email: user.email || '',
+            phone: '',
+            username: user.email?.split('@')[0] || 'google_user',
+            bloodGroup: '',
+            city: '',
+            country: '',
+            state: '',
+            district: '',
+            area: '',
+            latitude: 0,
+            longitude: 0,
+            streak: 0,
+            points: 100, // starting points
+            donationsCount: 0,
+            badges: [],
+            isLoggedIn: true,
+            availableToDonate: false,
+            telegramChatId: ''
+          };
+          db.saveUserProfile(newProfile);
+          setProfile(newProfile);
+
+          setName(newProfile.name);
+          setPhone(newProfile.phone);
+          setBloodGroup(newProfile.bloodGroup);
+          setCity(newProfile.city);
+        }
+        window.dispatchEvent(new Event('telegram-status-updated'));
+      } else {
+        // Fall back to standard locally cached profile (e.g. from custom credentials auth)
+        loadData();
+      }
+    } catch (e) {
+      console.error("Error verifying active session:", e);
+      loadData();
+    }
+  };
+
   useEffect(() => {
-    loadData();
+    checkSession();
 
     // Trigger Auth Modal if auth parameter is present in URL query
     if (typeof window !== 'undefined') {
@@ -138,8 +229,9 @@ export default function DashboardPage() {
     });
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Simply clear profile and reload
+    await supabase.auth.signOut();
     db.saveUserProfile({ ...db.getUserProfile(), isLoggedIn: false } as any);
     window.dispatchEvent(new Event('telegram-status-updated'));
     window.location.reload();
@@ -253,6 +345,9 @@ export default function DashboardPage() {
 
       if (error) {
         console.warn("Supabase Google Auth failed, falling back to seamless mock profile...", error.message);
+      } else {
+        // Real Google login initiated successfully, early return to await redirect.
+        return;
       }
 
       // 2. Mock Google Account fallback for local testing
