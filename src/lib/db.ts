@@ -253,6 +253,9 @@ export const db = {
       console.log("[Supabase Sync] Fetching master data from Supabase...");
       const { data: dbRequests } = await supabase.from('bloodindo_requests').select('*').order('created_at', { ascending: false });
       if (dbRequests) {
+        const previousRequests = db.getRequests();
+        const previousIds = previousRequests.map(r => r.id);
+
         const mapped = dbRequests.map(r => ({
           id: r.id,
           patientName: r.patient_name,
@@ -273,6 +276,14 @@ export const db = {
           volunteers: r.volunteers || []
         }));
         setStorageItem('blood_requests', mapped);
+
+        // Auto-trigger alerts for newly synced active requests!
+        for (const req of mapped) {
+          if (req.status === 'Active' && !previousIds.includes(req.id)) {
+            // Trigger matching alerts in the background
+            db.sendMatchingAlerts(req);
+          }
+        }
       }
       
       const { data: dbAlerts } = await supabase.from('bloodindo_alerts').select('*').order('timestamp', { ascending: false }).limit(50);
@@ -471,6 +482,10 @@ export const db = {
     });
 
     syncRequestToSupabase(newRequest);
+    
+    // Trigger matching alerts immediately
+    db.sendMatchingAlerts(newRequest);
+    
     return newRequest;
   },
 
@@ -706,25 +721,103 @@ export const db = {
   },
 
   sendMatchingAlerts: async (req: BloodRequest) => {
-    const donors = db.getDonors();
-    for (const donor of donors) {
-      if (donor.telegramChatId && db.isCompatible(donor.bloodGroup, req.bloodGroup)) {
-        const text = `🚨 <b>NEW MATCHING EMERGENCY</b> 🚨\n\n` +
-          `A patient needs <b>${req.bloodGroup}</b> blood immediately!\n\n` +
-          `• <b>Patient:</b> ${req.patientName}\n` +
-          `• <b>Hospital:</b> ${req.hospitalName}\n` +
-          `• <b>Location:</b> ${req.hospitalLocation || 'N/A'}\n` +
-          `• <b>Urgency:</b> ${req.urgencyLevel}\n` +
-          `• <b>Required Units:</b> ${req.unitsNeeded}\n` +
-          `${req.notes ? `• <b>Notes:</b> ${req.notes}\n` : ''}\n` +
-          `Please open Blood Indo to volunteer and save a life!`;
-        await db.sendTelegramMessage(donor.telegramChatId, text);
+    // 1. Prevent duplicate alerts using local storage tracking list
+    const notifiedKey = 'bloodindo_notified_telegram_alerts';
+    let notifiedList: string[] = [];
+    try {
+      const stored = localStorage.getItem(notifiedKey);
+      if (stored) notifiedList = JSON.parse(stored);
+    } catch {}
+
+    try {
+      // 2. Performance Query matching blood groups first
+      const { data: dbActiveProfiles, error: fetchError } = await supabase
+        .from('bloodindo_profiles')
+        .select('*')
+        .eq('available_to_donate', true)
+        .eq('blood_group', req.bloodGroup);
+
+      if (fetchError) throw fetchError;
+      if (!dbActiveProfiles || dbActiveProfiles.length === 0) return;
+
+      for (const profile of dbActiveProfiles) {
+        if (!profile.telegram_chat_id) continue;
         
-        db.addSystemAlert({
-          type: 'telegram',
-          message: `Auto-matched alert sent to donor ${donor.name} via Telegram.`
-        });
+        // Skip if pending code (starts with CODE:)
+        if (profile.telegram_chat_id.startsWith('CODE:')) continue;
+
+        // Check duplicate alert for this request + donor
+        const duplicateId = `${req.id}_${profile.telegram_chat_id}`;
+        if (notifiedList.includes(duplicateId)) continue;
+
+        // 3. Location Matching
+        // Search for location keywords in request details
+        const reqText = (
+          req.hospitalName + ' ' + 
+          (req.hospitalLocation || '') + ' ' + 
+          (req.notes || '')
+        ).toLowerCase();
+
+        let isLocationMatched = false;
+        let matchReason = '';
+
+        const donorCity = (profile.city || '').trim().toLowerCase();
+        const donorDistrict = (profile.district || '').trim().toLowerCase();
+        const donorState = (profile.state || '').trim().toLowerCase();
+        const donorArea = (profile.area || '').trim().toLowerCase();
+
+        // Priority 1: Same City or Area Match
+        if (donorCity && reqText.includes(donorCity)) {
+          isLocationMatched = true;
+          matchReason = `City Match (${profile.city})`;
+        } else if (donorArea && reqText.includes(donorArea)) {
+          isLocationMatched = true;
+          matchReason = `Area Match (${profile.area})`;
+        }
+        // Priority 2: Same District Match
+        else if (donorDistrict && reqText.includes(donorDistrict)) {
+          isLocationMatched = true;
+          matchReason = `District Match (${profile.district})`;
+        }
+        // Priority 3: Same State Match (Critical only)
+        else if (donorState && reqText.includes(donorState)) {
+          if (req.urgencyLevel === 'Critical') {
+            isLocationMatched = true;
+            matchReason = `State Match (Critical - ${profile.state})`;
+          }
+        }
+
+        if (!isLocationMatched) continue;
+
+        // Format location for alert message (Hide exact donor location, show only request details)
+        const locationDisplay = req.hospitalLocation || req.hospitalName;
+
+        // 4. Custom Telegram Alert Message (Urgent Blood Needed)
+        const text = `🚨 <b>Urgent Blood Needed</b>\n\n` +
+          `<b>Blood Group:</b> ${req.bloodGroup}\n` +
+          `<b>Location:</b> ${locationDisplay}\n` +
+          `<b>Hospital:</b> ${req.hospitalName}\n` +
+          `<b>Units Needed:</b> ${req.unitsNeeded}\n` +
+          `<b>Urgency:</b> ${req.urgencyLevel}\n\n` +
+          `<i>This request matches your blood group and location.</i>\n\n` +
+          `👉 <a href="https://bloodundo.in/feed?id=${req.id}">Tap to view details and help save a life</a>`;
+
+        const success = await db.sendTelegramMessage(profile.telegram_chat_id, text);
+        if (success) {
+          // Log duplicate prevention
+          notifiedList.push(duplicateId);
+          try {
+            localStorage.setItem(notifiedKey, JSON.stringify(notifiedList));
+          } catch {}
+
+          db.addSystemAlert({
+            type: 'telegram',
+            message: `Auto-matched alert (${matchReason}) sent to donor ${profile.name} via Telegram.`
+          });
+        }
       }
+    } catch (err) {
+      console.error('[Alert Engine] Matching alert calculation failed:', err);
     }
   }
 };
