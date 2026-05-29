@@ -34,7 +34,9 @@ export default function Footer() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-red-dark/15 border border-brand-red-neon/20 text-xs font-bold text-brand-red-glow">
                 <Globe className="h-3.5 w-3.5 animate-spin-slow text-brand-red-neon" />
-                <span>Built with â¤ï¸ in Kerala</span>
+                <span className="flex items-center gap-1">
+                  Built with <Heart className="h-3.5 w-3.5 fill-brand-red-neon text-brand-red-neon animate-pulse shrink-0" /> in Kerala
+                </span>
               </div>
               
               {/* Install APK Button */}
