@@ -114,14 +114,14 @@ function FeedContent() {
     setIsEditFormOpen(true);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editPatientName || !editHospitalName || !editHospitalLocation || !editContactDetails) {
       alert("Please fill in all fields.");
       return;
     }
 
-    const result = db.updateRequest(editingRequestId, {
+    const result = await db.updateRequest(editingRequestId, {
       patientName: editPatientName,
       bloodGroup: editBloodGroup,
       hospitalName: editHospitalName,
@@ -141,9 +141,9 @@ function FeedContent() {
     }
   };
 
-  const handleDeleteRequest = (req: any) => {
+  const handleDeleteRequest = async (req: any) => {
     if (confirm("Are you sure you want to delete patient " + req.patientName + "'s blood request? This will permanently remove it from the public feed.")) {
-      const result = db.deleteRequest(req.id);
+      const result = await db.deleteRequest(req.id);
       if (result.success) {
         loadData();
       } else {
@@ -157,9 +157,9 @@ function FeedContent() {
     setIsPosterOpen(true);
   };
 
-  const handleMarkFulfilled = (req: any) => {
+  const handleMarkFulfilled = async (req: any) => {
     if (confirm("Are you sure you want to mark patient " + req.patientName + "'s blood request as successfully received?")) {
-      const result = db.markRequestAsFulfilled(req.id);
+      const result = await db.markRequestAsFulfilled(req.id);
       if (result.success) {
         loadData();
       } else {

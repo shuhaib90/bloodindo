@@ -78,7 +78,13 @@ export interface SystemAlert {
   timestamp: string;
 }
 
-const INITIAL_DONORS: Donor[] = [];
+const INITIAL_DONORS: Donor[] = [
+  { id: '1', name: 'Raj Kumar', bloodGroup: 'O+', latitude: 12.9716, longitude: 77.5946, distance: 2.5, city: 'Bengaluru', phone: '+91 90000 00001', available: true, avatar: '🏥', badges: ['Fast Responder'], streak: 3 },
+  { id: '2', name: 'Priya Sharma', bloodGroup: 'A-', latitude: 12.9816, longitude: 77.6046, distance: 4.2, city: 'Bengaluru', phone: '+91 90000 00002', available: true, avatar: '🩸', badges: ['Lifesaver'], streak: 5 },
+  { id: '3', name: 'Mohammed Ali', bloodGroup: 'B+', latitude: 12.9616, longitude: 77.5846, distance: 1.8, city: 'Bengaluru', phone: '+91 90000 00003', available: true, avatar: '🏥', badges: [], streak: 1 },
+  { id: '4', name: 'Anita Desai', bloodGroup: 'O-', latitude: 12.9916, longitude: 77.5746, distance: 5.6, city: 'Bengaluru', phone: '+91 90000 00004', available: true, avatar: '🩸', badges: ['Universal Donor'], streak: 8 },
+  { id: '5', name: 'Vikram Singh', bloodGroup: 'AB+', latitude: 12.9516, longitude: 77.6146, distance: 3.1, city: 'Bengaluru', phone: '+91 90000 00005', available: true, avatar: '🏥', badges: [], streak: 2 }
+];
 
 const INITIAL_REQUESTS: BloodRequest[] = [];
 
@@ -193,10 +199,7 @@ const syncRequestToSupabase = async (req: BloodRequest) => {
         units_needed: req.unitsNeeded,
         units_fulfilled: req.unitsFulfilled,
         urgency_level: req.urgencyLevel,
-        distance: req.distance,
-        latitude: req.latitude,
-        longitude: req.longitude,
-        status: req.status,
+                status: req.status,
         created_at: req.createdAt,
         volunteers: req.volunteers
       });
@@ -260,9 +263,9 @@ export const db = {
           unitsNeeded: r.units_needed,
           unitsFulfilled: r.units_fulfilled,
           urgencyLevel: r.urgency_level as any,
-          distance: r.distance,
-          latitude: r.latitude || 0,
-          longitude: r.longitude || 0,
+          distance: r.distance || '',
+          latitude: r.latitude || 12.9716,
+          longitude: r.longitude || 77.5946,
           status: r.status as 'Active' | 'Fulfilled' | 'Expired',
           createdAt: r.created_at,
           volunteers: r.volunteers || []
@@ -357,7 +360,7 @@ export const db = {
         .select('*')
         .eq('available_to_donate', true);
 
-      if (dbActiveProfiles && dbActiveProfiles.length > 0) {
+      if (dbActiveProfiles) {
         const jitter = (val: number) => {
           // Add a random offset between ~400m and ~1.2km (0.004 to 0.010 degrees) to hide exact homes
           const offset = 0.004 + Math.random() * 0.006;
@@ -385,7 +388,7 @@ export const db = {
             available: p.available_to_donate || false,
             distance: 1.0,
             city: locationLabel,
-            avatar: p.avatar || (p.badges && p.badges.includes('Fast Responder') ? '🦸‍♂️' : '👨'),
+            avatar: p.avatar || (p.badges && p.badges.includes('Fast Responder') ? '🏥' : '🩸'),
             badges: p.badges || [],
             streak: p.streak || 0,
             telegramChatId: p.telegram_chat_id || ''
@@ -393,13 +396,45 @@ export const db = {
         });
 
         const currentLocal = getStorageItem<Donor[]>('blood_donors', INITIAL_DONORS);
-        const filteredLocal = currentLocal.filter(d => 
-          d.id === 'user_self' || 
-          !activeDonors.some(ad => ad.id === d.id)
-        );
-
-        setStorageItem('blood_donors', [...filteredLocal, ...activeDonors]);
+        const profile = db.getUserProfile();
+        
+        const mergedList: Donor[] = [...activeDonors];
+        
+        if (profile && profile.isLoggedIn && profile.availableToDonate) {
+          const userSelf = currentLocal.find(d => d.id === 'user_self');
+          if (userSelf) {
+            mergedList.push(userSelf);
+          } else {
+            const userSelfDonor: Donor = {
+              id: 'user_self',
+              name: (profile.name || 'Google Lifesaver') + " (You)",
+              bloodGroup: (profile.bloodGroup || 'O-') as BloodGroup,
+              latitude: profile.latitude || 12.9720,
+              longitude: profile.longitude || 77.5930,
+              phone: profile.phone || '',
+              available: true,
+              distance: 0.5,
+              city: profile.city || 'Kochi, Kerala',
+              avatar: '🏥',
+              badges: profile.badges || [],
+              streak: profile.streak || 0
+            };
+            mergedList.push(userSelfDonor);
+          }
+        }
+        
+        const mockIds = ['1', '2', '3', '4', '5'];
+        mockIds.forEach(id => {
+          const mock = currentLocal.find(d => d.id === id);
+          if (mock && !mergedList.some(d => d.id === id)) {
+            mergedList.push(mock);
+          }
+        });
+        
+        setStorageItem('blood_donors', mergedList);
       }
+
+
 
       console.log("[Supabase Sync] Complete! Local cache updated seamlessly.");
     } catch (e) {
@@ -467,7 +502,7 @@ export const db = {
     return { success: false, message: 'Request not found.' };
   },
 
-  markRequestAsFulfilled: (requestId: string): { success: boolean; message: string } => {
+  markRequestAsFulfilled: async (requestId: string): Promise<{ success: boolean; message: string }> => {
     const requests = db.getRequests();
     const reqIndex = requests.findIndex(r => r.id === requestId);
     if (reqIndex !== -1) {
@@ -482,13 +517,13 @@ export const db = {
         message: "BLOOD RECEIVED: Patient " + req.patientName + " (" + req.bloodGroup + ") successfully received blood."
       });
 
-      syncRequestToSupabase(req);
+      await syncRequestToSupabase(req);
       return { success: true, message: 'Request marked as successfully fulfilled.' };
     }
     return { success: false, message: 'Request not found.' };
   },
 
-  updateRequest: (requestId: string, updatedFields: Partial<BloodRequest>): { success: boolean; message: string; request?: BloodRequest } => {
+  updateRequest: async (requestId: string, updatedFields: Partial<BloodRequest>): Promise<{ success: boolean; message: string; request?: BloodRequest }> => {
     const requests = db.getRequests();
     const reqIndex = requests.findIndex(r => r.id === requestId);
     if (reqIndex !== -1) {
@@ -500,19 +535,19 @@ export const db = {
       }
       requests[reqIndex] = req;
       db.saveRequests(requests);
-      syncRequestToSupabase(req);
+      await syncRequestToSupabase(req);
       return { success: true, message: 'Request updated successfully.', request: req };
     }
     return { success: false, message: 'Request not found.' };
   },
 
-  deleteRequest: (requestId: string): { success: boolean; message: string } => {
+  deleteRequest: async (requestId: string): Promise<{ success: boolean; message: string }> => {
     const requests = db.getRequests();
     const index = requests.findIndex(r => r.id === requestId);
     if (index !== -1) {
       requests.splice(index, 1);
       db.saveRequests(requests);
-      deleteRequestFromSupabase(requestId);
+      await deleteRequestFromSupabase(requestId);
       return { success: true, message: 'Request deleted successfully.' };
     }
     return { success: false, message: 'Request not found.' };
@@ -521,8 +556,8 @@ export const db = {
   getDonors: (): Donor[] => {
     const list = getStorageItem('blood_donors', INITIAL_DONORS);
     const profile = db.getUserProfile();
+    const userIndex = list.findIndex(d => d.id === 'user_self');
     if (profile && profile.isLoggedIn && profile.availableToDonate) {
-      const userIndex = list.findIndex(d => d.id === 'user_self');
       const userSelfDonor: Donor = {
         id: 'user_self',
         name: (profile.name || 'Google Lifesaver') + " (You)",
@@ -533,7 +568,7 @@ export const db = {
         available: true,
         distance: 0.5,
         city: profile.city || 'Kochi, Kerala',
-        avatar: '🦸‍♂️',
+        avatar: '🏥',
         badges: profile.badges || [],
         streak: profile.streak || 0
       };
@@ -544,13 +579,15 @@ export const db = {
         list[userIndex] = userSelfDonor;
       }
     } else {
-      const userIndex = list.findIndex(d => d.id === 'user_self');
       if (userIndex !== -1) {
         list.splice(userIndex, 1);
       }
     }
+    setStorageItem('blood_donors', list);
     return list;
   },
+
+
 
   saveDonors: (donors: Donor[]): void => {
     setStorageItem('blood_donors', donors);
