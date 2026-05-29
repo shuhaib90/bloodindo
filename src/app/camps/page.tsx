@@ -235,6 +235,9 @@ END:VCALENDAR`;
 
   // Filter camps based on search queries
   const filteredCamps = camps.filter(camp => {
+    // Completed camps should disappear from public listings
+    if (camp.isCompleted) return false;
+
     const textStr = (camp.campName + ' ' + camp.description + ' ' + camp.venueName + ' ' + camp.organizerName).toLowerCase();
     const queryMatch = textStr.includes(searchQuery.toLowerCase());
     

@@ -315,7 +315,7 @@ export const db = {
       // Synchronize Camps & Events from Supabase
       try {
         const { data: dbCamps } = await supabase.from('bloodindo_camps').select('*').order('event_date', { ascending: true });
-        if (dbCamps && dbCamps.length > 0) {
+        if (dbCamps) {
           const mappedCamps = dbCamps.map(c => ({
             id: c.id,
             campName: c.camp_name,
