@@ -14,7 +14,8 @@ export async function POST(request: Request) {
 
     let query = supabase.from('bloodindo_profiles').select('*');
     if (isPhone) {
-      query = query.eq('phone', identifier);
+      const normalizedPhone = identifier.replace(/\D/g, '').slice(-10);
+      query = query.like('phone', `%${normalizedPhone}`);
     } else {
       query = query.eq('username', identifier);
     }
