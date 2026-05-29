@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Phone, Heart, Check, MessageSquare, Award, Filter, Navigation, Loader2 } from "lucide-react";
+import { MapPin, Phone, Heart, Check, MessageSquare, Award, Filter, Navigation, Loader2, X, Send } from "lucide-react";
 import { db, Donor, BloodGroup } from "../../lib/db";
 import { useTranslation } from "../../components/LanguageContext";
 import { detectFullLocation, LocationData } from "../../lib/geolocation";
@@ -11,9 +11,15 @@ export default function DonorsPage() {
   const { t } = useTranslation();
   const [selectedBlood, setSelectedBlood] = useState<BloodGroup | ''>('');
   const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
-  const [isAlertSent, setIsAlertSent] = useState(false);
-  const [isCallingbusy, setIsCallingbusy] = useState(false);
-  const [callActive, setCallActive] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  
+  // Direct Blood Request form states
+  const [reqPatientName, setReqPatientName] = useState("");
+  const [reqBloodGroup, setReqBloodGroup] = useState<BloodGroup | "">("");
+  const [reqPhone, setReqPhone] = useState("");
+  const [reqHospitalName, setReqHospitalName] = useState("");
+  const [reqMapUrl, setReqMapUrl] = useState("");
+  const [reqSending, setReqSending] = useState(false);
   
   const [donors, setDonors] = useState<Donor[]>([]);
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
@@ -176,76 +182,76 @@ export default function DonorsPage() {
     };
   }, [selectedBlood, locating, donors, userLocation]);
 
-  const handleSendAlert = async () => {
+  const handleSubmitRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedDonor) return;
-    setIsAlertSent(true);
     
-    db.addSystemAlert({
-      type: 'request',
-      message: "MANUAL DISPATCH: Emergency alert sent directly to donor " + selectedDonor.name + " (" + selectedDonor.bloodGroup + ")."
-    });
+    if (!reqPatientName || !reqBloodGroup || !reqPhone || !reqHospitalName) {
+      alert("Please fill in all required fields.");
+      return;
+    }
 
-    // Find the latest active request to get card details
-    const requests = db.getRequests();
-    const activeReq = requests.find(r => r.status === 'Active') || requests[0];
+    setReqSending(true);
 
-    if (activeReq) {
+    try {
+      const googleMapsUrl = reqMapUrl.trim();
+      const text = `🚨 <b>DIRECT EMERGENCY BLOOD REQUEST</b> 🚨\n\n` +
+        `A user has requested your help directly on Blood Indo!\n\n` +
+        `• <b>Patient Name:</b> ${reqPatientName}\n` +
+        `• <b>Required Blood:</b> <b>${reqBloodGroup}</b>\n` +
+        `• <b>Hospital:</b> ${reqHospitalName}\n` +
+        `• <b>Contact Requester:</b> ${reqPhone}\n` +
+        `${googleMapsUrl ? `• <b>Hospital Location:</b> <a href="${googleMapsUrl}">Open Google Maps</a>\n` : ''}\n` +
+        `Please contact the requester immediately to coordinate and save a life!`;
+
       if (selectedDonor.telegramChatId) {
-        const text = `🚨 <b>DIRECT EMERGENCY DISPATCH</b> 🚨\n\n` +
-          `You have been contacted directly to donate blood:\n\n` +
-          `• <b>Patient:</b> ${activeReq.patientName}\n` +
-          `• <b>Required Blood:</b> ${activeReq.bloodGroup}\n` +
-          `• <b>Hospital:</b> ${activeReq.hospitalName}\n` +
-          `• <b>Location:</b> ${activeReq.hospitalLocation || 'N/A'}\n` +
-          `• <b>Urgency:</b> ${activeReq.urgencyLevel}\n` +
-          `${activeReq.notes ? `• <b>Notes:</b> ${activeReq.notes}\n` : ''}\n` +
-          `Please contact: ${activeReq.contactDetails || 'Blood Indo Helpdesk'}`;
-
         await db.sendTelegramMessage(selectedDonor.telegramChatId, text);
         
         db.addSystemAlert({
           type: 'telegram',
-          message: "Telegram Direct Message dispatched to " + selectedDonor.name + " with card details."
+          message: "Telegram Direct Request dispatched to " + selectedDonor.name + " (" + reqBloodGroup + ")"
         });
-        
+
         // Dispatch local event for simulated bot view
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('telegram-message-dispatched-sim', { 
             detail: { donorId: selectedDonor.id, text } 
           }));
         }
+
+        alert("Success! Your request has been dispatched directly to " + selectedDonor.name + " via Telegram!");
       } else {
-        // Fallback for simulation / unlinked users
-        setTimeout(() => {
-          db.addSystemAlert({
-            type: 'telegram',
-            message: "Telegram Direct Message simulated for " + selectedDonor.name + " (Account not linked)."
-          });
-        }, 1500);
+        // Mock fallback alert for visual check
+        db.addSystemAlert({
+          type: 'telegram',
+          message: "Direct Request simulated for " + selectedDonor.name + " (Telegram account not linked)."
+        });
+        alert("Success (Simulated)! Your direct request details have been logged. " + selectedDonor.name + "'s account is not yet connected to a Telegram Bot.");
       }
+
+      // Add a system broadcast alert
+      db.addSystemAlert({
+        type: 'request',
+        message: "DIRECT DISPATCH: Blood request sent to " + selectedDonor.name + " for patient " + reqPatientName + " (" + reqBloodGroup + ")."
+      });
+
+      // Clear states and close
+      setReqPatientName("");
+      setReqBloodGroup("");
+      setReqPhone("");
+      setReqHospitalName("");
+      setReqMapUrl("");
+      setShowRequestModal(false);
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send request. Please try again.");
+    } finally {
+      setReqSending(false);
     }
   };
 
-  const handleCallDonor = () => {
-    if (!selectedDonor) return;
-    setCallActive(true);
-    setIsCallingbusy(true);
 
-    db.addSystemAlert({
-      type: 'voice_call',
-      message: "Outbound emergency voice call simulated to " + selectedDonor.name + " at " + selectedDonor.phone + " via Twilio."
-    });
-
-    setTimeout(() => {
-      setIsCallingbusy(false);
-      db.addSystemAlert({
-        type: 'voice_call',
-        message: "Twilio Call Completed: " + selectedDonor.name + " acknowledged request and is en-route."
-      });
-      alert("Twilio Simulation: Call Completed! donor " + selectedDonor.name + " has accepted and is responding!");
-      setCallActive(false);
-    }, 4000);
-  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex-1 flex flex-col gap-6 relative">
@@ -268,7 +274,6 @@ export default function DonorsPage() {
             onChange={(e) => {
               setSelectedBlood(e.target.value as BloodGroup);
               setSelectedDonor(null);
-              setIsAlertSent(false);
             }}
             className="rounded-lg bg-brand-black border border-white/10 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-brand-red-neon"
           >
@@ -302,8 +307,7 @@ export default function DonorsPage() {
               userLng={userLocation?.longitude}
               onDonorSelect={(selected: any) => {
                 setSelectedDonor(selected);
-                setIsAlertSent(false);
-              }}
+                }}
             />
           )}
 
@@ -332,27 +336,14 @@ export default function DonorsPage() {
 
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={handleSendAlert}
-                  disabled={isAlertSent || isCallingbusy}
-                  className={"w-full flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold transition-all " + (
-                    isAlertSent
-                      ? 'bg-emerald-950/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-gradient-to-r from-brand-red to-brand-red-neon text-white hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(255,0,60,0.2)]'
-                  )}
+                  onClick={() => {
+                    setReqBloodGroup(selectedDonor.bloodGroup);
+                    setShowRequestModal(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon text-white hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(255,0,60,0.35)] py-3 text-xs font-bold transition-all border border-brand-red-neon/30"
                 >
-                  {isAlertSent ? <><Check className="h-4 w-4" /> Priority Alert Dispatched</> : <><MessageSquare className="h-4 w-4" /> Dispatch Priority Alert</>}
-                </button>
-
-                <button
-                  onClick={handleCallDonor}
-                  disabled={callActive}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-brand-black/60 py-3 text-xs font-bold text-gray-300 hover:bg-white/10 hover:text-white transition-all active:scale-95"
-                >
-                  {isCallingbusy ? (
-                    <><Phone className="h-4 w-4 animate-bounce text-emerald-400" /> Ringing via Twilio...</>
-                  ) : (
-                    <><Phone className="h-4 w-4" /> Initiate Secure Voice Call</>
-                  )}
+                  <Heart className="h-4 w-4 fill-white text-white animate-pulse" />
+                  <span>Request Blood</span>
                 </button>
               </div>
             </div>
@@ -373,6 +364,128 @@ export default function DonorsPage() {
           )}
         </div>
       </div>
+
+      {/* Direct Blood Request Form Modal Popup */}
+      {showRequestModal && selectedDonor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md rounded-2xl glass-panel bg-brand-charcoal border border-brand-red-neon/30 p-6 shadow-[0_0_50px_rgba(255,0,60,0.15)] flex flex-col relative">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-brand-red-neon animate-pulse" />
+                <h3 className="text-base font-bold text-white uppercase tracking-wider font-sans">Request Direct Aid</h3>
+              </div>
+              <button 
+                onClick={() => setShowRequestModal(false)}
+                className="rounded-lg p-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-gray-400 mb-4 bg-brand-black/40 border border-white/5 p-3 rounded-xl">
+              Sending a direct alert card to <span className="font-extrabold text-white">{selectedDonor.name}</span>'s Telegram alerts.
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSubmitRequest} className="flex flex-col gap-4">
+              
+              {/* Patient Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Patient Name</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. Rahul Menon"
+                  value={reqPatientName}
+                  onChange={(e) => setReqPatientName(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black/60 border border-white/10 px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-red-neon transition-all placeholder:text-gray-600"
+                />
+              </div>
+
+              {/* Blood Group */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Required Blood Group</label>
+                <select 
+                  required
+                  value={reqBloodGroup}
+                  onChange={(e) => setReqBloodGroup(e.target.value as BloodGroup)}
+                  className="w-full rounded-xl bg-brand-black/60 border border-white/10 px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-red-neon transition-all"
+                >
+                  <option value="">Select Blood Group</option>
+                  <option value="O-">O- (Universal)</option>
+                  <option value="O+">O+</option>
+                  <option value="A-">A-</option>
+                  <option value="A+">A+</option>
+                  <option value="B-">B-</option>
+                  <option value="B+">B+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="AB+">AB+</option>
+                </select>
+              </div>
+
+              {/* Requester Contact Phone Number */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Requester Contact Phone</label>
+                <input 
+                  type="tel"
+                  required
+                  placeholder="e.g. +91 98765 43210"
+                  value={reqPhone}
+                  onChange={(e) => setReqPhone(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black/60 border border-white/10 px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-red-neon transition-all placeholder:text-gray-600"
+                />
+              </div>
+
+              {/* Hospital Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Hospital Name & Details</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. General Hospital, Attingal"
+                  value={reqHospitalName}
+                  onChange={(e) => setReqHospitalName(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black/60 border border-white/10 px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-red-neon transition-all placeholder:text-gray-600"
+                />
+              </div>
+
+              {/* Map Location URL */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Hospital Map URL (Google Maps)</label>
+                <input 
+                  type="url"
+                  placeholder="e.g. https://maps.app.goo.gl/..."
+                  value={reqMapUrl}
+                  onChange={(e) => setReqMapUrl(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black/60 border border-white/10 px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-red-neon transition-all placeholder:text-gray-600"
+                />
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-3 mt-4 border-t border-white/5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowRequestModal(false)}
+                  className="flex-1 rounded-xl border border-white/10 bg-brand-black/40 hover:bg-white/5 py-3 text-xs font-bold text-gray-300 hover:text-white transition-all text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reqSending}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-brand-red-neon hover:bg-brand-red-neon/90 py-3 text-xs font-bold text-white transition-all shadow-[0_0_15px_rgba(255,0,60,0.3)] disabled:opacity-50"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  <span>{reqSending ? 'Sending...' : 'Send Request'}</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

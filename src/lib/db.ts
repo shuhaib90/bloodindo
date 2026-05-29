@@ -344,9 +344,11 @@ export const db = {
           const jitteredLat = p.latitude ? jitter(p.latitude) : 12.9720;
           const jitteredLng = p.longitude ? jitter(p.longitude) : 77.5930;
           
-          // Build a safe place summary like "Area, City, District, State" (e.g., Attingal, Trivandrum, Kerala)
-          const locationParts = [p.area, p.city, p.district, p.state].filter(Boolean);
-          const locationLabel = locationParts.join(", ") || p.city || 'Kochi, Kerala';
+          // Build a safe vicinity summary (e.g., Near Attingal, Kerala) to protect exact home privacy
+          const locationParts = [p.city, p.state].filter(Boolean);
+          const locationLabel = locationParts.length > 0 
+            ? `Near ${locationParts.join(", ")}` 
+            : 'Near Kochi, Kerala';
 
           return {
             id: p.id,
