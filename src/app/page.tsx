@@ -41,6 +41,16 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Auto-fill contact details if logged in when drawer opens
+  useEffect(() => {
+    if (isDrawerOpen) {
+      const profile = db.getUserProfile();
+      if (profile && profile.isLoggedIn && profile.phone) {
+        setContactDetails(profile.phone);
+      }
+    }
+  }, [isDrawerOpen]);
+
   const handleSubmitRequest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientName || !hospitalName || !hospitalLocation || !contactDetails) {

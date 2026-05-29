@@ -168,14 +168,26 @@ function FeedContent() {
     }
   };
 
+  const normalizePhone = (p?: string): string => {
+    return (p || '').replace(/\D/g, '').slice(-10);
+  };
+
   const filteredRequests = requests.filter((req: any) => {
     const bloodMatch = selectedBlood === "All" || req.bloodGroup === selectedBlood;
     const urgencyMatch = selectedUrgency === "All" || req.urgencyLevel === selectedUrgency;
-    const tabMatch = activeTab === "all" || req.contactDetails === userProfile.phone;
+    
+    // Normalize phone numbers to make comparison robust against country codes/spaces
+    const tabMatch = activeTab === "all" || (
+      req.contactDetails && userProfile.phone && 
+      normalizePhone(req.contactDetails) === normalizePhone(userProfile.phone)
+    );
     return bloodMatch && urgencyMatch && tabMatch;
   });
 
-  const myRequestsCount = requests.filter((r: any) => r.contactDetails === userProfile.phone).length;
+  const myRequestsCount = requests.filter((r: any) => 
+    r.contactDetails && userProfile.phone && 
+    normalizePhone(r.contactDetails) === normalizePhone(userProfile.phone)
+  ).length;
 
   const getAlertIcon = (type: string) => {
     switch (type) {
