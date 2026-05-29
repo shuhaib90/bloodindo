@@ -83,7 +83,10 @@ export default function Navbar() {
           {/* Logo Section */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <img src="/logo.png" alt="bloodundo logo" className="h-8 w-8 object-contain shrink-0 filter drop-shadow-[0_0_8px_rgba(255,0,60,0.35)] group-hover:scale-105 transition-transform duration-300" />
+              <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.08] border border-white/10 backdrop-blur-md shadow-md shadow-brand-red-neon/5 group-hover:bg-white/[0.12] transition-all duration-300">
+                <img src="/logo.png" alt="bloodundo logo" className="h-6.5 w-6.5 object-contain shrink-0 group-hover:scale-110 transition-transform duration-300" />
+                <span className="absolute -inset-0.5 rounded-xl bg-brand-red-neon/30 blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+              </span>
               <span className="text-xl font-bold tracking-tight text-white font-sans">
                 BLOOD<span className="text-brand-red-neon font-black">INDO</span>
               </span>
