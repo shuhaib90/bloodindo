@@ -545,6 +545,18 @@ export const db = {
     // Trigger matching alerts immediately
     db.sendMatchingAlerts(newRequest);
 
+    // Track locally as my created request
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem('my_created_requests');
+        const ids = stored ? JSON.parse(stored) : [];
+        ids.push(newRequest.id);
+        localStorage.setItem('my_created_requests', JSON.stringify(ids));
+      } catch (e) {
+        console.error('Failed to save request ID to local storage:', e);
+      }
+    }
+
     // Native Browser Notification
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
       try {

@@ -30,22 +30,14 @@ export default function Footer() {
               Real-time emergency blood donation matching and community life-saving alerts. Powered by the people, for the people.
             </p>
 
-                        {/* APK Install */}
+                        {/* Kerala Badge */}
             <div className="flex flex-wrap items-center gap-3">
-
-              
-              {/* Install APK Button */}
-              <a
-                href="/app-release.apk"
-                download="BloodUndo.apk"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-xs font-bold text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-all duration-300 shadow-sm hover:scale-105 active:scale-95 group cursor-pointer"
-                title="Download BloodUndo Android APK"
-              >
-                <svg className="h-3.5 w-3.5 fill-current group-hover:rotate-12 transition-transform text-emerald-400" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17.5 13c-.8 0-1.5-.7-1.5-1.5S16.7 10 17.5 10s1.5.7 1.5 1.5-.7 1.5-1.5 1.5zm-11 0c-.8 0-1.5-.7-1.5-1.5S5.7 10 6.5 10s1.5.7 1.5 1.5-.7 1.5-1.5 1.5zM12 17.5c-2.3 0-4.3-1.4-5.2-3.4h10.4c-.9 2-2.9 3.4-5.2 3.4zm5.8-9.3l1.8-3.1c.1-.2 0-.5-.2-.6-.2-.1-.5 0-.6.2l-1.9 3.2C15.3 7.3 13.7 7 12 7s-3.3.3-4.9.9L5.2 4.7c-.1-.2-.4-.3-.6-.2-.2.1-.3.4-.2.6l1.8 3.1C3.8 10 2 12.5 2 15.5h20c0-3-1.8-5.5-4.2-7.3z"/>
-                </svg>
-                <span>Install Android APK</span>
-              </a>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-red-dark/15 border border-brand-red-neon/20 text-xs font-bold text-brand-red-glow">
+                <Globe className="h-3.5 w-3.5 animate-spin-slow text-brand-red-neon" />
+                <span className="flex items-center gap-1">
+                  Built with <Heart className="h-3.5 w-3.5 fill-brand-red-neon text-brand-red-neon animate-pulse shrink-0" /> in Kerala
+                </span>
+              </div>
             </div>
           </div>
 

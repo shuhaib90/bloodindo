@@ -55,6 +55,7 @@ function FeedContent() {
   const searchParams = useSearchParams();
   const [requests, setRequests] = useState<any[]>([]);
   const [systemAlerts, setSystemAlerts] = useState<any[]>([]);
+  const [myCreatedIds, setMyCreatedIds] = useState<string[]>([]);
   
   // Tabs
   const [activeTab, setActiveTab] = useState("all"); // "all" | "my"
@@ -96,6 +97,12 @@ function FeedContent() {
   const loadData = () => {
     setRequests(db.getRequests());
     setSystemAlerts(db.getSystemAlerts().slice(0, 10));
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem('my_created_requests');
+        setMyCreatedIds(stored ? JSON.parse(stored) : []);
+      } catch (e) {}
+    }
   };
 
   useEffect(() => {
@@ -221,7 +228,7 @@ function FeedContent() {
     const urgencyMatch = selectedUrgency === "All" || req.urgencyLevel === selectedUrgency;
     
     // Normalize phone numbers to make comparison robust against country codes/spaces
-    const tabMatch = activeTab === "all" || (
+    const tabMatch = activeTab === "all" || myCreatedIds.includes(req.id) || (
       req.contactDetails && userProfile.phone && 
       normalizePhone(req.contactDetails) === normalizePhone(userProfile.phone)
     );
@@ -239,8 +246,10 @@ function FeedContent() {
   });
 
   const myRequestsCount = requests.filter((r: any) => 
-    r.contactDetails && userProfile.phone && 
-    normalizePhone(r.contactDetails) === normalizePhone(userProfile.phone)
+    myCreatedIds.includes(r.id) || (
+      r.contactDetails && userProfile.phone && 
+      normalizePhone(r.contactDetails) === normalizePhone(userProfile.phone)
+    )
   ).length;
 
   const getAlertIcon = (type: string) => {
