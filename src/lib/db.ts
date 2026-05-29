@@ -792,15 +792,18 @@ export const db = {
         // Format location for alert message (Hide exact donor location, show only request details)
         const locationDisplay = req.hospitalLocation || req.hospitalName;
 
-        // 4. Custom Telegram Alert Message (Urgent Blood Needed)
+        // 4. Custom Telegram Alert Message (Urgent Blood Needed) - Sending All Details
         const text = `🚨 <b>Urgent Blood Needed</b>\n\n` +
+          `<b>Patient:</b> ${req.patientName}\n` +
           `<b>Blood Group:</b> ${req.bloodGroup}\n` +
-          `<b>Location:</b> ${locationDisplay}\n` +
+          `<b>Required Units:</b> ${req.unitsNeeded}\n` +
+          `<b>Urgency:</b> ${req.urgencyLevel}\n` +
           `<b>Hospital:</b> ${req.hospitalName}\n` +
-          `<b>Units Needed:</b> ${req.unitsNeeded}\n` +
-          `<b>Urgency:</b> ${req.urgencyLevel}\n\n` +
+          `<b>Location:</b> ${locationDisplay}\n` +
+          `<b>Contact Details:</b> ${req.contactDetails || 'N/A'}\n` +
+          `${req.notes ? `<b>Notes:</b> ${req.notes}\n` : ''}\n` +
           `<i>This request matches your blood group and location.</i>\n\n` +
-          `👉 <a href="https://bloodundo.in/feed?id=${req.id}">Tap to view details and help save a life</a>`;
+          `👉 <a href="https://bloodundo.in/feed?id=${req.id}">Tap to view details and help save a life</a>`
 
         const success = await db.sendTelegramMessage(profile.telegram_chat_id, text);
         if (success) {
