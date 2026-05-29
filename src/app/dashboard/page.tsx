@@ -28,32 +28,65 @@ export default function DashboardPage() {
   const [longitude, setLongitude] = useState(0);
   const [availableToDonate, setAvailableToDonate] = useState(false);
   const [telegramCode, setTelegramCode] = useState('');
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  // Handle Telegram verification code state
+  // Handle Telegram verification code state and countdown
   useEffect(() => {
-    if (profile && profile.telegramChatId) {
-      if (profile.telegramChatId.startsWith('CODE:')) {
-        setTelegramCode(profile.telegramChatId.split(':')[1]);
+    if (profile && profile.telegramChatId && profile.telegramChatId.startsWith('CODE:')) {
+      const parts = profile.telegramChatId.split(':');
+      const code = parts[1];
+      const expiry = parseInt(parts[2] || '0');
+      if (expiry && Date.now() < expiry) {
+        setTelegramCode(code);
+        setTimeLeft(Math.ceil((expiry - Date.now()) / 1000));
       } else {
         setTelegramCode('');
+        setTimeLeft(0);
       }
+    } else {
+      setTelegramCode('');
+      setTimeLeft(0);
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setTelegramCode('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleGenerateTelegramCode = () => {
     if (!profile) return;
-    const code = Math.floor(100000 + Math.random() * 900000).toString(); // unique 6-digit code
+    const code = 'BLOOD-' + Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const updatedVal = `CODE:${code}:${expiry}`;
     const updated = {
       ...profile,
-      telegramChatId: 'CODE:' + code
+      telegramChatId: updatedVal
     };
     db.saveUserProfile(updated);
     setProfile(updated);
     setTelegramCode(code);
+    setTimeLeft(600);
     
     db.addSystemAlert({
       type: 'telegram',
-      message: `SYSTEM: Telegram connection code generated for ${profile.name} (${code}).`
+      message: `SYSTEM: Telegram connection code generated for ${profile.name} (${code}). Expires in 10 minutes.`
     });
   };
 
@@ -67,6 +100,7 @@ export default function DashboardPage() {
       db.saveUserProfile(updated);
       setProfile(updated);
       setTelegramCode('');
+      setTimeLeft(0);
       
       db.addSystemAlert({
         type: 'telegram',
@@ -839,12 +873,28 @@ export default function DashboardPage() {
           )}
 
 
+        
         {/* Right: Telegram Bot Alert Center */}
         <div className="w-full z-10">
           <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-5">
-            <div className="flex items-center gap-2 border-b border-white/5 pb-4 mb-4">
-              <MessageSquare className="h-5 w-5 text-red-500 animate-pulse" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Telegram Alerts</h3>
+            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-brand-red animate-pulse" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Telegram Alerts</h3>
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                profile && profile.telegramChatId && !profile.telegramChatId.startsWith('CODE:')
+                  ? 'text-emerald-400 bg-emerald-950/20 border-emerald-500/20'
+                  : telegramCode && timeLeft > 0
+                  ? 'text-amber-400 bg-amber-950/20 border-amber-500/20'
+                  : 'text-zinc-500 bg-zinc-950/40 border-zinc-500/20'
+              }`}>
+                {profile && profile.telegramChatId && !profile.telegramChatId.startsWith('CODE:')
+                  ? 'Connected'
+                  : telegramCode && timeLeft > 0
+                  ? 'Waiting for Verification'
+                  : 'Not Connected'}
+              </span>
             </div>
             
             {profile && profile.telegramChatId && !profile.telegramChatId.startsWith('CODE:') ? (
@@ -853,14 +903,14 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2.5 bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4 text-emerald-400">
                   <ShieldCheck className="h-5 w-5 shrink-0" />
                   <div className="text-left">
-                    <p className="text-xs font-bold uppercase tracking-wider">Bot Connected</p>
+                    <p className="text-xs font-bold uppercase tracking-wider">Connected</p>
                     <p className="text-[10px] text-gray-400 mt-0.5">Receiving real-time matching emergency blood alerts.</p>
                   </div>
                 </div>
                 
                 <button
                   onClick={handleDisconnectTelegram}
-                  className="w-full py-2.5 bg-zinc-900 hover:bg-red-950/20 border border-white/5 hover:border-red-500/20 text-xs text-gray-400 hover:text-red-400 font-bold rounded-xl transition-all active:scale-95"
+                  className="w-full py-2.5 bg-zinc-900 hover:bg-red-950/20 border border-white/5 hover:border-red-500/20 text-xs text-gray-400 hover:text-red-400 font-bold rounded-xl transition-all active:scale-95 animate-fadeIn"
                 >
                   Disconnect Bot
                 </button>
@@ -869,42 +919,65 @@ export default function DashboardPage() {
               // Disconnected / Code Pending State
               <div className="flex flex-col gap-4">
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Connect your profile to our official Telegram bot to receive live emergency notifications whenever a patient matches your blood group!
+                  Connect your profile to receive live emergency notifications whenever a patient matches your blood group!
                 </p>
 
-                {telegramCode ? (
+                {telegramCode && timeLeft > 0 ? (
                   // Code Generated, instructions shown
-                  <div className="bg-brand-black/60 border border-brand-red-neon/20 rounded-xl p-4 flex flex-col items-center gap-3">
-                    <div className="text-center">
+                  <div className="bg-brand-black/60 border border-brand-red-neon/20 rounded-xl p-4 flex flex-col items-center gap-3 animate-fadeIn">
+                    <div className="text-center w-full">
                       <p className="text-[10px] text-gray-500 uppercase tracking-widest font-extrabold">Your Verification Code</p>
-                      <p className="text-3xl font-black text-brand-red-glow font-mono tracking-wider mt-1 animate-pulse">
-                        {telegramCode}
-                      </p>
+                      
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <p className="text-2xl font-black text-brand-red-glow font-mono tracking-wider animate-pulse">
+                          {telegramCode}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(telegramCode);
+                            alert("Verification code copied to clipboard!");
+                          }}
+                          className="p-1.5 bg-brand-charcoal border border-white/10 hover:border-white/20 text-gray-400 hover:text-white rounded-lg transition-all active:scale-90"
+                          title="Copy Code"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-1 mt-2 text-[10px] text-amber-500 font-bold">
+                        <span className="animate-ping h-1.5 w-1.5 rounded-full bg-amber-500 mr-1" />
+                        <span>Expires in: {formatTime(timeLeft)}</span>
+                      </div>
                     </div>
 
                     <div className="w-full border-t border-white/5 pt-3 text-left space-y-2">
                       <p className="text-[10px] font-bold text-white uppercase">How to activate:</p>
                       <div className="text-[11px] text-gray-400 space-y-1.5 pl-1">
                         <p>1. Open bot: <a href="https://t.me/bloodundobot" target="_blank" rel="noreferrer" className="text-brand-red-glow hover:underline inline-flex items-center gap-0.5 font-bold">@bloodundobot <ExternalLink className="h-2.5 w-2.5 inline" /></a></p>
-                        <p>2. Send your 6-digit code: <code className="bg-brand-charcoal text-white px-1.5 py-0.5 rounded font-mono font-bold text-xs">{telegramCode}</code></p>
-                        <p>3. Your account will link instantly! 🎉</p>
+                        <p>2. Send your code: <code className="bg-brand-charcoal text-white px-1.5 py-0.5 rounded font-mono font-bold text-xs">{telegramCode}</code></p>
+                        <p>3. Your account will link instantly!</p>
                       </div>
                     </div>
 
                     <button
+                      type="button"
                       onClick={handleGenerateTelegramCode}
-                      className="text-[10px] text-sky-400 hover:underline mt-1 bg-transparent border-none"
+                      className="text-[10px] text-sky-400 hover:underline mt-1 bg-transparent border-none cursor-pointer"
                     >
-                      Regenerate Code
+                      Generate New Code
                     </button>
                   </div>
                 ) : (
                   // Generate Code Button
                   <button
+                    type="button"
                     onClick={handleGenerateTelegramCode}
                     className="w-full py-3 bg-gradient-to-r from-brand-red to-brand-red-neon text-white font-bold rounded-xl text-xs shadow-md shadow-brand-red-neon/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <span>Generate Activation Code</span>
+                    <span>Generate Code</span>
                   </button>
                 )}
               </div>

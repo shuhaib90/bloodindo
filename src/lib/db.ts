@@ -24,6 +24,7 @@ export interface UserProfile {
   isLoggedIn: boolean;
   availableToDonate: boolean;
   telegramChatId?: string;
+  lastDonationDate?: string;
 }
 
 export interface Donor {
@@ -40,6 +41,7 @@ export interface Donor {
   badges: string[];
   streak: number;
   telegramChatId?: string;
+  lastDonationDate?: string;
 }
 
 export interface BloodRequest {
@@ -678,27 +680,7 @@ export const db = {
 
 
   linkTelegramByPhone: (phone: string, chatId: string): { success: boolean; name: string } => {
-    const normalize = (p: string) => p.replace(/\D/g, '').slice(-10);
-    const target = normalize(phone);
-    if (!target) return { success: false, name: '' };
-
-    // Check logged in user
-    const profile = db.getUserProfile();
-    if (profile.phone && normalize(profile.phone) === target) {
-      profile.telegramChatId = chatId;
-      db.saveUserProfile(profile);
-      return { success: true, name: profile.name };
-    }
-
-    // Check donors list
-    const donors = db.getDonors();
-    const donorIndex = donors.findIndex(d => d.phone && normalize(d.phone) === target);
-    if (donorIndex !== -1) {
-      donors[donorIndex].telegramChatId = chatId;
-      db.saveDonors(donors);
-      return { success: true, name: donors[donorIndex].name };
-    }
-
+    // Legacy method - removed in favor of secure code verification system
     return { success: false, name: '' };
   },
 
