@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from 'react';
 import { Award, Flame, Heart, Calendar, User, ShieldAlert, Trophy, CheckCircle2, MapPin, Navigation, Loader2, Lock, ArrowRight, UserPlus, MessageSquare, ExternalLink, ShieldCheck } from "lucide-react";
@@ -368,7 +368,9 @@ export default function DashboardPage() {
       }
 
       // Step 2: Call appropriate API
-      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+            const baseEndpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+      const endpoint = isCapacitor ? `https://bloodundo.in${baseEndpoint}` : baseEndpoint;
       const payload = authMode === 'login' 
         ? { identifier: authIdentifier, password: authPassword }
         : { identifier: authIdentifier, password: authPassword, name: authName, city: loc?.city || '' };
