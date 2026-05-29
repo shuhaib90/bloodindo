@@ -345,21 +345,37 @@ export const db = {
         .eq('available_to_donate', true);
 
       if (dbActiveProfiles && dbActiveProfiles.length > 0) {
-        const activeDonors = dbActiveProfiles.map(p => ({
-          id: p.id,
-          name: p.name || 'Anonymous Donor',
-          bloodGroup: p.blood_group as BloodGroup,
-          latitude: p.latitude || 12.9720,
-          longitude: p.longitude || 77.5930,
-          phone: p.phone || '',
-          available: p.available_to_donate || false,
-          distance: 1.0,
-          city: p.city || 'Kochi',
-          avatar: p.avatar || (p.badges && p.badges.includes('Fast Responder') ? '🦸‍♂️' : '👨'),
-          badges: p.badges || [],
-          streak: p.streak || 0,
-          telegramChatId: p.telegram_chat_id || ''
-        }));
+        const jitter = (val: number) => {
+          // Add a random offset between ~400m and ~1.2km (0.004 to 0.010 degrees) to hide exact homes
+          const offset = 0.004 + Math.random() * 0.006;
+          const sign = Math.random() < 0.5 ? -1 : 1;
+          return val + (offset * sign);
+        };
+
+        const activeDonors = dbActiveProfiles.map(p => {
+          const jitteredLat = p.latitude ? jitter(p.latitude) : 12.9720;
+          const jitteredLng = p.longitude ? jitter(p.longitude) : 77.5930;
+          
+          // Build a safe place summary like "Area, City, District, State" (e.g., Attingal, Trivandrum, Kerala)
+          const locationParts = [p.area, p.city, p.district, p.state].filter(Boolean);
+          const locationLabel = locationParts.join(", ") || p.city || 'Kochi, Kerala';
+
+          return {
+            id: p.id,
+            name: p.name || 'Anonymous Donor',
+            bloodGroup: p.blood_group as BloodGroup,
+            latitude: jitteredLat,
+            longitude: jitteredLng,
+            phone: p.phone || '',
+            available: p.available_to_donate || false,
+            distance: 1.0,
+            city: locationLabel,
+            avatar: p.avatar || (p.badges && p.badges.includes('Fast Responder') ? '🦸‍♂️' : '👨'),
+            badges: p.badges || [],
+            streak: p.streak || 0,
+            telegramChatId: p.telegram_chat_id || ''
+          };
+        });
 
         const currentLocal = getStorageItem<Donor[]>('blood_donors', INITIAL_DONORS);
         const filteredLocal = currentLocal.filter(d => 

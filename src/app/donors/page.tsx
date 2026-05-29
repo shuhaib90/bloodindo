@@ -36,22 +36,34 @@ export default function DonorsPage() {
         // Adjust mock donors to be relative to the user's ACTUAL GPS coordinates so they appear on radar
         const adjustedDonors = rawDonors.map(d => {
           if (d.id === 'user_self') return d;
-          
-          // Random offset within ~10km (0.1 deg approx)
-          const latOffset = (Math.random() - 0.5) * 0.15;
-          const lngOffset = (Math.random() - 0.5) * 0.15;
-          const newLat = loc.latitude + latOffset;
-          const newLng = loc.longitude + lngOffset;
-          
-          const dist = db.calculateDistance(loc.latitude, loc.longitude, newLat, newLng);
 
-          return {
-            ...d,
-            latitude: newLat,
-            longitude: newLng,
-            distance: dist,
-            city: loc.city || loc.area || d.city // Match location spelling
-          };
+          const isMockDonor = ['1', '2', '3', '4', '5'].includes(d.id);
+          
+          if (isMockDonor) {
+            // Random offset within ~10km (0.1 deg approx) so standard mock list appears nearby user for demo
+            const latOffset = (Math.random() - 0.5) * 0.15;
+            const lngOffset = (Math.random() - 0.5) * 0.15;
+            const newLat = loc.latitude + latOffset;
+            const newLng = loc.longitude + lngOffset;
+            
+            const dist = db.calculateDistance(loc.latitude, loc.longitude, newLat, newLng);
+
+            return {
+              ...d,
+              latitude: newLat,
+              longitude: newLng,
+              distance: dist,
+              city: loc.city || loc.area || d.city // Match location spelling
+            };
+          } else {
+            // Real donor from Supabase. Use their securely jittered coordinates to compute true distance.
+            // This preserves their true relative vicinity without exposing their exact address.
+            const dist = db.calculateDistance(loc.latitude, loc.longitude, d.latitude, d.longitude);
+            return {
+              ...d,
+              distance: dist
+            };
+          }
         });
 
         // Sort by real distance
