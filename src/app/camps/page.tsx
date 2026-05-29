@@ -1,10 +1,36 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Share2, Plus, Edit, Trash2, Heart, Award, Compass, Search, ExternalLink, Globe, Phone, Clock, FileText, CheckCircle2, ChevronRight, User } from 'lucide-react';
 import { db, DonationCamp } from '../../lib/db';
 import { useTranslation } from '../../components/LanguageContext';
 import confetti from 'canvas-confetti';
+
+function getCampProximityScore(camp: DonationCamp, userProfile: any): number {
+  if (!userProfile) return 0;
+  
+  let score = 0;
+  const campCity = (camp.city || '').toLowerCase();
+  const campDistrict = (camp.district || '').toLowerCase();
+  const campState = (camp.state || '').toLowerCase();
+  const campText = `${camp.campName || ''} ${camp.venueName || ''} ${camp.description || ''}`.toLowerCase();
+  
+  const userCity = (userProfile.city || '').toLowerCase();
+  const userDistrict = (userProfile.district || '').toLowerCase();
+  const userState = (userProfile.state || '').toLowerCase();
+  
+  if (userCity && (campCity === userCity || campText.includes(userCity))) {
+    score += 5000;
+  }
+  if (userDistrict && (campDistrict === userDistrict || campText.includes(userDistrict))) {
+    score += 2000;
+  }
+  if (userState && (campState === userState || campText.includes(userState))) {
+    score += 500;
+  }
+  
+  return score;
+}
 
 export default function CampsPage() {
   const { t } = useTranslation();
@@ -233,7 +259,7 @@ END:VCALENDAR`;
     }
   };
 
-  // Filter camps based on search queries
+  // Filter and sort camps based on search queries and proximity
   const filteredCamps = camps.filter(camp => {
     // Completed camps should disappear from public listings
     if (camp.isCompleted) return false;
@@ -246,6 +272,16 @@ END:VCALENDAR`;
     const cityMatch = selectedCity === "All" || camp.city.toLowerCase() === selectedCity.toLowerCase();
 
     return queryMatch && catMatch && distMatch && cityMatch;
+  }).sort((a, b) => {
+    const scoreA = getCampProximityScore(a, profile);
+    const scoreB = getCampProximityScore(b, profile);
+    
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA; // Descending (highest score first)
+    }
+    
+    // Fallback: sort by date (newest first)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   // Extract filter list values dynamically

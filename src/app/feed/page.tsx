@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -7,6 +7,48 @@ import { db, BloodGroup, UrgencyLevel } from "../../lib/db";
 import { useTranslation } from "../../components/LanguageContext";
 import EmergencyCard from "../../components/EmergencyCard";
 import PosterGenerator from "../../components/PosterGenerator";
+
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function getProximityScore(req: any, userProfile: any): number {
+  if (!userProfile) return 0;
+  
+  // 1. If GPS coordinates match, calculate a highly-accurate distance score
+  if (userProfile.latitude && userProfile.longitude && req.latitude && req.longitude) {
+    const dist = getDistance(userProfile.latitude, userProfile.longitude, req.latitude, req.longitude);
+    return Math.max(0, 10000 - dist * 10);
+  }
+  
+  // 2. Textual matching fallbacks
+  let score = 0;
+  const targetText = `${req.hospitalName || ''} ${req.hospitalLocation || ''} ${req.notes || ''}`.toLowerCase();
+  
+  const userCity = (userProfile.city || '').toLowerCase();
+  const userDistrict = (userProfile.district || '').toLowerCase();
+  const userState = (userProfile.state || '').toLowerCase();
+
+  if (userCity && targetText.includes(userCity)) {
+    score += 5000;
+  }
+  if (userDistrict && targetText.includes(userDistrict)) {
+    score += 2000;
+  }
+  if (userState && targetText.includes(userState)) {
+    score += 500;
+  }
+  
+  return score;
+}
 
 function FeedContent() {
   const { t } = useTranslation();
@@ -89,7 +131,9 @@ function FeedContent() {
       unitsNeeded,
       urgencyLevel: urgencyLevel as UrgencyLevel,
       notes: notes || ("Severe blood emergency for " + bloodGroup + " at " + hospitalName + "."),
-      countdownMinutes: urgencyLevel === "Critical" ? 45 : urgencyLevel === "Rare Blood" ? 90 : 120
+      countdownMinutes: urgencyLevel === "Critical" ? 45 : urgencyLevel === "Rare Blood" ? 90 : 120,
+      latitude: userProfile?.latitude || undefined,
+      longitude: userProfile?.longitude || undefined
     });
 
     setPatientName("");
@@ -182,6 +226,16 @@ function FeedContent() {
       normalizePhone(req.contactDetails) === normalizePhone(userProfile.phone)
     );
     return bloodMatch && urgencyMatch && tabMatch;
+  }).sort((a: any, b: any) => {
+    const scoreA = getProximityScore(a, userProfile);
+    const scoreB = getProximityScore(b, userProfile);
+    
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA; // Descending (highest score first)
+    }
+    
+    // Fallback: sort by creation date (newest first)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   const myRequestsCount = requests.filter((r: any) => 
