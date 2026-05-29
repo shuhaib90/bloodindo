@@ -77,31 +77,13 @@ export interface SystemAlert {
   timestamp: string;
 }
 
-const INITIAL_DONORS: Donor[] = [
-  { id: '1', name: 'Raj Kumar', bloodGroup: 'O+', latitude: 12.9716, longitude: 77.5946, distance: 2.5, city: 'Bengaluru', phone: '+91 90000 00001', available: true, avatar: '👨', badges: ['Fast Responder'], streak: 3 },
-  { id: '2', name: 'Priya Sharma', bloodGroup: 'A-', latitude: 12.9816, longitude: 77.6046, distance: 4.2, city: 'Bengaluru', phone: '+91 90000 00002', available: true, avatar: '👩', badges: ['Lifesaver'], streak: 5 },
-  { id: '3', name: 'Mohammed Ali', bloodGroup: 'B+', latitude: 12.9616, longitude: 77.5846, distance: 1.8, city: 'Bengaluru', phone: '+91 90000 00003', available: true, avatar: '👨', badges: [], streak: 1 },
-  { id: '4', name: 'Anita Desai', bloodGroup: 'O-', latitude: 12.9916, longitude: 77.5746, distance: 5.6, city: 'Bengaluru', phone: '+91 90000 00004', available: true, avatar: '👩', badges: ['Universal Donor'], streak: 8 },
-  { id: '5', name: 'Vikram Singh', bloodGroup: 'AB+', latitude: 12.9516, longitude: 77.6146, distance: 3.1, city: 'Bengaluru', phone: '+91 90000 00005', available: true, avatar: '👨', badges: [], streak: 2 }
-];
+const INITIAL_DONORS: Donor[] = [];
 
-const INITIAL_REQUESTS: BloodRequest[] = [
-  { id: 'req_1', patientName: 'Suresh Menon', bloodGroup: 'O+', hospitalName: 'Apollo Hospital', unitsNeeded: 3, unitsFulfilled: 1, urgencyLevel: 'Critical', distance: '3.2 km', latitude: 12.9750, longitude: 77.5900, status: 'Active', createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), volunteers: ['Raj Kumar'] },
-  { id: 'req_2', patientName: 'Meera Reddy', bloodGroup: 'A-', hospitalName: 'Manipal Hospital', unitsNeeded: 2, unitsFulfilled: 0, urgencyLevel: 'High', distance: '5.1 km', latitude: 12.9800, longitude: 77.6100, status: 'Active', createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), volunteers: [] },
-  { id: 'req_3', patientName: 'Kiran Patel', bloodGroup: 'B+', hospitalName: 'Fortis Hospital', unitsNeeded: 1, unitsFulfilled: 1, urgencyLevel: 'Standard', distance: '1.5 km', latitude: 12.9650, longitude: 77.5800, status: 'Fulfilled', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), volunteers: ['Mohammed Ali'] }
-];
+const INITIAL_REQUESTS: BloodRequest[] = [];
 
-const INITIAL_LEADERBOARD: LeaderboardEntry[] = [
-  { id: 'l1', name: 'Anita Desai', points: 1250, donations: 12, streak: 8, avatar: '👩' },
-  { id: 'l2', name: 'Arjun Nair', points: 980, donations: 9, streak: 6, avatar: '👨' },
-  { id: 'l3', name: 'Priya Sharma', points: 850, donations: 8, streak: 5, avatar: '👩' },
-  { id: 'l4', name: 'Sarah Connor', points: 450, donations: 3, streak: 4, avatar: '🦸‍♀️' },
-  { id: 'l5', name: 'Raj Kumar', points: 320, donations: 3, streak: 3, avatar: '👨' }
-];
+const INITIAL_LEADERBOARD: LeaderboardEntry[] = [];
 
-const INITIAL_ALERTS: SystemAlert[] = [
-  { id: 'a1', type: 'system', message: 'System initialized. Radar active.', timestamp: new Date().toISOString() }
-];
+const INITIAL_ALERTS: SystemAlert[] = [];
 
 const isClient = typeof window !== 'undefined';
 
