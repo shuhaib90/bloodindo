@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Activity, CheckCircle2, Clock, Droplet } from 'lucide-react';
+import { Calendar, Activity, CheckCircle2, Clock, Droplet, Loader2 } from 'lucide-react';
 
-export default function EligibilityTracker() {
-  const [lastDonationDate, setLastDonationDate] = useState<Date | null>(null);
+interface EligibilityTrackerProps {
+  lastDonationDate: string | null | undefined;
+  onDonateToday: () => void;
+  isLoading?: boolean;
+}
+
+export default function EligibilityTracker({ lastDonationDate, onDonateToday, isLoading = false }: EligibilityTrackerProps) {
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
-
   const REQUIRED_DAYS_BETWEEN_DONATIONS = 56;
 
   useEffect(() => {
@@ -17,21 +21,18 @@ export default function EligibilityTracker() {
     }
 
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastDonationDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const lastDate = new Date(lastDonationDate);
+    const diffTime = now.getTime() - lastDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     const remaining = REQUIRED_DAYS_BETWEEN_DONATIONS - diffDays;
     setDaysRemaining(remaining > 0 ? remaining : 0);
   }, [lastDonationDate]);
 
-  const handleDonateToday = () => {
-    setLastDonationDate(new Date());
-  };
-
   const isEligible = daysRemaining === 0;
   
   const progress = isEligible ? 100 : ((REQUIRED_DAYS_BETWEEN_DONATIONS - daysRemaining) / REQUIRED_DAYS_BETWEEN_DONATIONS) * 100;
-  const circumference = 2 * Math.PI * 36; // smaller radius = 36
+  const circumference = 2 * Math.PI * 36;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
@@ -116,10 +117,11 @@ export default function EligibilityTracker() {
           <div className="flex items-center justify-center sm:justify-start">
             {isEligible ? (
               <button 
-                onClick={handleDonateToday}
-                className="rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-red-neon/20 hover:shadow-brand-red-neon/40 active:scale-95 transition-all flex items-center gap-2"
+                onClick={onDonateToday}
+                disabled={isLoading}
+                className={`rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 ${isLoading ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed' : 'bg-gradient-to-r from-brand-red to-brand-red-neon shadow-brand-red-neon/20 hover:shadow-brand-red-neon/40 active:scale-95'}`}
               >
-                <Activity className="w-4 h-4" />
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
                 Log Today's Donation
               </button>
             ) : (

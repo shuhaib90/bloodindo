@@ -95,8 +95,9 @@ export default function DashboardPage() {
     if (confirm("Are you sure you want to disconnect your Telegram notifications?")) {
       const updated = {
         ...profile,
-        telegramChatId: ''
-      };
+        telegramChatId: '',
+            lastDonationDate: undefined
+          };
       db.saveUserProfile(updated);
       setProfile(updated);
       setTelegramCode('');
@@ -125,6 +126,29 @@ export default function DashboardPage() {
   
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+
+  const [isLoggingDonation, setIsLoggingDonation] = useState(false);
+
+  const handleLogDonation = async () => {
+    if (!profile?.id) return;
+    setIsLoggingDonation(true);
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('bloodindo_profiles')
+        .update({ last_donation_date: now })
+        .eq('id', profile.id);
+
+      if (!error) {
+        setProfile({ ...profile, lastDonationDate: now });
+        db.saveUserProfile({ ...profile, lastDonationDate: now });
+      }
+    } catch (err) {
+      console.error('Error logging donation:', err);
+    } finally {
+      setIsLoggingDonation(false);
+    }
+  };
 
   const loadData = () => {
     const userProfile = db.getUserProfile();
@@ -180,7 +204,8 @@ export default function DashboardPage() {
             badges: dbProfile.badges || [],
             isLoggedIn: true,
             availableToDonate: dbProfile.available_to_donate || false,
-            telegramChatId: dbProfile.telegram_chat_id || ''
+            telegramChatId: dbProfile.telegram_chat_id || '',
+            lastDonationDate: dbProfile.last_donation_date || undefined
           };
           db.saveUserProfile(updatedProfile);
           setProfile(updatedProfile);
@@ -218,7 +243,8 @@ export default function DashboardPage() {
             badges: [],
             isLoggedIn: true,
             availableToDonate: false,
-            telegramChatId: ''
+            telegramChatId: '',
+            lastDonationDate: undefined
           };
           db.saveUserProfile(newProfile);
           setProfile(newProfile);
@@ -869,7 +895,11 @@ export default function DashboardPage() {
         
           {/* Eligibility Tracker */}
           {profile.isLoggedIn && (
-            <EligibilityTracker />
+            <EligibilityTracker 
+              lastDonationDate={profile.lastDonationDate}
+              onDonateToday={handleLogDonation}
+              isLoading={isLoggingDonation}
+            />
           )}
 
 
@@ -1129,4 +1159,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
