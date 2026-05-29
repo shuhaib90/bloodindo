@@ -3,6 +3,7 @@ import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "../components/LanguageContext";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import WarningModal from "@/components/WarningModal";
 import TelegramBotWorker from "@/components/TelegramBotWorker";
 
@@ -40,6 +41,7 @@ export default function RootLayout({
         <main className="flex-1 flex flex-col">
           {children}
         </main>
+        <Footer />
         </LanguageProvider>
       </body>
     </html>
