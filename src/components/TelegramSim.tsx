@@ -1,35 +1,50 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Send, Smartphone, UserCheck, MessageSquare, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Send, Smartphone, ShieldCheck, RefreshCw, ExternalLink } from 'lucide-react';
 import { db } from '../lib/db';
 
 interface Message {
   sender: 'bot' | 'user';
   text: string;
   timestamp: string;
-  isContact?: boolean;
 }
 
 export default function TelegramSim() {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'bot',
-      text: '🤖 <b>Welcome to Blood Indo Alerts Bot!</b>\n\nPlease share your phone number to connect your Blood Indo account for live emergency dispatches.',
+      text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 6282876261</code> or <code>6282876261</code>).',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
   const [isLinked, setIsLinked] = useState(false);
+  const [step, setStep] = useState<'awaiting_phone' | 'awaiting_name' | 'linked'>('awaiting_phone');
+  const [tempPhone, setTempPhone] = useState('');
+  const [matchedProfile, setMatchedProfile] = useState<any>(null);
+  const [inputText, setInputText] = useState('');
   const [userProfile, setUserProfile] = useState<any>(null);
+  
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const mustReadGuidelines = `🎉 <b>Verification Successful!</b>\n\nYour Blood Indo account is connected to this Telegram alert bot.\n\n📚 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Blood Indo Lifesaver! 🦸‍♂️🏥❤️`;
 
   const fetchProfile = () => {
     const profile = db.getUserProfile();
     setUserProfile(profile);
-    if (profile.telegramChatId) {
+    if (profile && profile.telegramChatId) {
       setIsLinked(true);
+      setStep('linked');
+      setMessages([
+        {
+          sender: 'bot',
+          text: `🎉 <b>Account Active!</b>\n\nWelcome back, <b>${profile.name}</b>.\n\n${mustReadGuidelines}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
     } else {
       setIsLinked(false);
+      setStep('awaiting_phone');
     }
   };
 
@@ -45,7 +60,7 @@ export default function TelegramSim() {
       const req = (e as CustomEvent).detail;
       const profile = db.getUserProfile();
       
-      if (profile.telegramChatId && db.isCompatible(profile.bloodGroup as any, req.bloodGroup)) {
+      if (profile && profile.telegramChatId && db.isCompatible(profile.bloodGroup as any, req.bloodGroup)) {
         const text = `🚨 <b>NEW MATCHING EMERGENCY</b> 🚨\n\n` +
           `A patient needs <b>${req.bloodGroup}</b> blood immediately!\n\n` +
           `• <b>Patient:</b> ${req.patientName}\n` +
@@ -95,75 +110,144 @@ export default function TelegramSim() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleShareContact = async () => {
-    if (!userProfile || !userProfile.phone) {
-      alert("Please save a phone number in your Profile tab first!");
-      return;
-    }
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+
+    const userMsg = inputText.trim();
+    setInputText('');
 
     const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    // Add user shared contact message
+
+    // Add user message to feed
     setMessages(prev => [
       ...prev,
       {
         sender: 'user',
-        text: `📞 Shared Phone: <b>${userProfile.phone}</b>`,
-        timestamp: timeString,
-        isContact: true
+        text: userMsg,
+        timestamp: timeString
       }
     ]);
 
-    // Send payload to our actual route.ts webhook endpoint!
-    try {
-      const response = await fetch('/api/telegram', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          update_id: Math.floor(Math.random() * 100000),
-          message: {
-            message_id: Math.floor(Math.random() * 1000),
-            from: { id: 999999, first_name: userProfile.name || 'User' },
-            chat: { id: 999999, type: 'private' },
-            date: Math.floor(Date.now() / 1000),
-            contact: {
-              phone_number: userProfile.phone,
-              first_name: userProfile.name || 'User',
-              user_id: 999999
+    // Simulate bot response after organic delay
+    setTimeout(() => {
+      const responseTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (step === 'awaiting_phone') {
+        const normalize = (p: string) => p.replace(/\\D/g, '').slice(-10);
+        const target = normalize(userMsg);
+        
+        if (!target) {
+          setMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: "❌ <b>Invalid Number Format</b>\n\nPlease enter a valid phone number containing digits.",
+              timestamp: responseTime
+            }
+          ]);
+          return;
+        }
+
+        // Search profile or donors
+        const profile = db.getUserProfile();
+        let found: any = null;
+
+        if (profile && profile.phone && normalize(profile.phone) === target) {
+          found = profile;
+        } else {
+          const donors = db.getDonors();
+          const donor = donors.find(d => d.phone && normalize(d.phone) === target);
+          if (donor) {
+            found = donor;
+          }
+        }
+
+        if (found) {
+          setStep('awaiting_name');
+          setTempPhone(userMsg);
+          setMatchedProfile(found);
+          setMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: `🔍 <b>Account Found!</b>\n\nTo confirm your identity, <b>Step 2:</b> Please type your **Full Name** exactly as registered on Blood Indo.`,
+              timestamp: responseTime
+            }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: `❌ <b>Registration Failed</b>\n\nWe couldn't find a Blood Indo profile with the phone number <b>${userMsg}</b>.\n\nPlease type a valid registered phone number, or log in to the website, complete your profile, and try again!`,
+              timestamp: responseTime
+            }
+          ]);
+        }
+      } 
+      
+      else if (step === 'awaiting_name') {
+        const nameInput = userMsg.toLowerCase().replace(/\\s+/g, '');
+        const actualName = matchedProfile.name.toLowerCase().replace(/\\s+/g, '').replace('(you)', '').trim();
+
+        if (nameInput === actualName || actualName.includes(nameInput) || nameInput.includes(actualName)) {
+          // Link telegram account
+          const targetProfile = db.getUserProfile();
+          const normalize = (p: string) => p.replace(/\\D/g, '').slice(-10);
+          
+          if (targetProfile && targetProfile.phone && normalize(targetProfile.phone) === normalize(tempPhone)) {
+            targetProfile.telegramChatId = '999999'; // Simulated chatId
+            db.saveUserProfile(targetProfile);
+          } else {
+            const donors = db.getDonors();
+            const donorIndex = donors.findIndex(d => d.phone && normalize(d.phone) === normalize(tempPhone));
+            if (donorIndex !== -1) {
+              donors[donorIndex].telegramChatId = '999999';
+              db.saveDonors(donors);
             }
           }
-        })
-      });
 
-      if (response.ok) {
-        setIsLinked(true);
-        // Refresh local view
-        setMessages(prev => [
-          ...prev,
-          {
-            sender: 'bot',
-            text: `✅ <b>Account Connected!</b>\n\nWelcome, <b>${userProfile.name}</b>. Your Blood Indo website account is linked with Telegram.\n\nYou will automatically receive real-time notifications whenever a patient matches your blood group!`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ]);
-        
-        // Update local profile representation
-        fetchProfile();
+          setStep('linked');
+          setIsLinked(true);
+          
+          const successText = `🎉 <b>Verification Successful!</b>\n\nWelcome, <b>${matchedProfile.name}</b>! Your Blood Indo account has been connected to this Telegram alert bot.\n\n📚 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Blood Indo Lifesaver! 🦸‍♂️🏥❤️`;
+
+          setMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: successText,
+              timestamp: responseTime
+            }
+          ]);
+
+          window.dispatchEvent(new Event('telegram-status-updated'));
+        } else {
+          setMessages(prev => [
+            ...prev,
+            {
+              sender: 'bot',
+              text: `❌ <b>Name Verification Failed</b>\n\nThe name <b>${userMsg}</b> does not match the registered name for this phone number.\n\nPlease type your **Full Name** exactly as registered on your profile page to confirm your identity.`,
+              timestamp: responseTime
+            }
+          ]);
+        }
       }
-    } catch (e) {
-      console.error("Simulation error", e);
-    }
+    }, 800);
   };
 
   const handleResetSim = () => {
-    if (userProfile) {
-      const updated = { ...userProfile, telegramChatId: '' };
+    const profile = db.getUserProfile();
+    if (profile) {
+      const updated = { ...profile, telegramChatId: '' };
       db.saveUserProfile(updated);
       setIsLinked(false);
+      setStep('awaiting_phone');
       setMessages([
         {
           sender: 'bot',
-          text: '🤖 <b>Welcome to Blood Indo Alerts Bot!</b>\n\nPlease share your phone number to connect your Blood Indo account for live emergency dispatches.',
+          text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 6282876261</code> or <code>6282876261</code>).',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -212,7 +296,7 @@ export default function TelegramSim() {
             >
               <div 
                 dangerouslySetInnerHTML={{ __html: msg.text }} 
-                className="whitespace-pre-line"
+                className="whitespace-pre-line text-[11px]"
               />
               <span className="text-[9px] text-zinc-400/80 self-end mt-1.5">{msg.timestamp}</span>
             </div>
@@ -221,25 +305,44 @@ export default function TelegramSim() {
         </div>
 
         {/* Bottom Actions Area */}
-        <div className="bg-[#182533] p-3 border-t border-zinc-900 flex flex-col gap-2">
-          {!isLinked ? (
-            <button
-              onClick={() => {
-                handleShareContact();
-                window.open('https://t.me/bloodundobot', '_blank');
-              }}
-              className="w-full py-2.5 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold rounded-lg text-xs shadow-md shadow-red-950/30 transition-all flex items-center justify-center gap-2 transform active:scale-[0.98]"
-            >
-              Connect Telegram 📞
-            </button>
+        <div className="bg-[#182533] p-2.5 border-t border-zinc-900 flex flex-col gap-2">
+          {step !== 'linked' ? (
+            <div className="flex flex-col gap-2">
+              <form onSubmit={handleSendMessage} className="flex gap-1.5">
+                <input
+                  type="text"
+                  required
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={step === 'awaiting_phone' ? "Enter registered phone..." : "Enter full name..."}
+                  className="flex-1 bg-[#0e1621] border border-zinc-800 rounded-xl px-3 py-2 text-[11px] text-white focus:outline-none focus:border-red-500/50 placeholder:text-zinc-600 font-sans"
+                />
+                <button 
+                  type="submit" 
+                  className="p-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white rounded-xl transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] active:scale-95 flex items-center justify-center shrink-0"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </form>
+              
+              <a
+                href="https://t.me/bloodundobot"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1 bg-gradient-to-r hover:border-zinc-700"
+              >
+                <span>Or Connect Real Telegram Bot</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
           ) : (
             <div className="flex items-center justify-center py-2 px-3 bg-emerald-950/20 border border-emerald-500/20 rounded-lg text-emerald-400 gap-1.5 text-center">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <span className="text-[10px] font-semibold">Account Linked & Receiving Alerts</span>
             </div>
           )}
-          <div className="text-[9px] text-zinc-500 text-center">
-            Virtual Telegram Bot Client
+          <div className="text-[8px] text-zinc-600 text-center font-mono">
+            Interactive Chatbot Simulator
           </div>
         </div>
       </div>
