@@ -338,6 +338,38 @@ export const db = {
         }
       }
 
+      // Fetch active profiles from Supabase to keep Nearby Donors Radar fully live and updated
+      const { data: dbActiveProfiles } = await supabase
+        .from('bloodindo_profiles')
+        .select('*')
+        .eq('available_to_donate', true);
+
+      if (dbActiveProfiles && dbActiveProfiles.length > 0) {
+        const activeDonors = dbActiveProfiles.map(p => ({
+          id: p.id,
+          name: p.name || 'Anonymous Donor',
+          bloodGroup: p.blood_group as BloodGroup,
+          latitude: p.latitude || 12.9720,
+          longitude: p.longitude || 77.5930,
+          phone: p.phone || '',
+          available: p.available_to_donate || false,
+          distance: 1.0,
+          city: p.city || 'Kochi',
+          avatar: p.avatar || (p.badges && p.badges.includes('Fast Responder') ? '🦸‍♂️' : '👨'),
+          badges: p.badges || [],
+          streak: p.streak || 0,
+          telegramChatId: p.telegram_chat_id || ''
+        }));
+
+        const currentLocal = getStorageItem<Donor[]>('blood_donors', INITIAL_DONORS);
+        const filteredLocal = currentLocal.filter(d => 
+          d.id === 'user_self' || 
+          !activeDonors.some(ad => ad.id === d.id)
+        );
+
+        setStorageItem('blood_donors', [...filteredLocal, ...activeDonors]);
+      }
+
       console.log("[Supabase Sync] Complete! Local cache updated seamlessly.");
     } catch (e) {
       console.error("[Supabase Sync] Background connection failed:", e);
