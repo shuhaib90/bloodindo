@@ -91,8 +91,7 @@ export default function Home() {
       <div className="w-full max-w-5xl z-10 flex flex-col items-center text-center">
 
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white mb-4 uppercase font-sans">
-          Securing Lives<br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red-neon via-brand-red to-brand-red-glow">In Real-Time</span>
+          {t("hero_title")}
         </h1>
         
         <p className="max-w-xl text-sm sm:text-base text-gray-400 mb-12 font-medium leading-relaxed">
@@ -106,11 +105,10 @@ export default function Home() {
 
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="relative z-10 flex h-36 w-36 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-red via-brand-red-deep to-brand-red-dark border border-brand-red-neon/50 text-white shadow-2xl shadow-brand-red-neon/40 hover:scale-105 active:scale-95 transition-all duration-300 group"
+            className="relative z-10 flex h-36 w-36 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-red via-brand-red-deep to-brand-red-dark border border-brand-red-neon/50 text-white shadow-2xl shadow-brand-red-neon/40 hover:scale-105 active:scale-95 transition-all duration-300 group p-4"
           >
             <Activity className="h-10 w-10 text-white animate-pulse mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-black tracking-widest uppercase leading-none">TRIGGER</span>
-            <span className="text-[9px] font-bold text-brand-red-glow tracking-widest uppercase mt-1 leading-none">BROADCAST</span>
+            <span className="text-xs font-black tracking-wider uppercase leading-snug text-center">{t("hero_trigger")}</span>
             <span className="absolute -inset-0.5 rounded-full bg-brand-red-neon/30 blur opacity-0 group-hover:opacity-100 transition-opacity"></span>
           </button>
         </div>
@@ -125,7 +123,7 @@ export default function Home() {
           <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col items-center">
             <Users className="h-6 w-6 text-brand-red-glow mb-2" />
             <span className="text-2xl sm:text-4xl font-black text-white">{stats.donors}</span>
-            <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase mt-1 tracking-wider">Donors Active</span>
+            <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase mt-1 tracking-wider">{t("hero_donors_online")}</span>
           </div>
 
           <div className="glass-panel bg-brand-charcoal/40 border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col items-center">
@@ -140,14 +138,14 @@ export default function Home() {
             href="/feed"
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white py-4 text-sm font-bold active:scale-95 transition-all"
           >
-            Open Emergency Feed <ChevronRight className="h-4 w-4" />
+            {t("nav_emergency_feed")} <ChevronRight className="h-4 w-4" />
           </Link>
           
           <Link
             href="/donors"
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon hover:shadow-[0_0_15px_rgba(255,0,60,0.25)] text-white py-4 text-sm font-bold active:scale-95 transition-all"
           >
-            Locate Nearby Donors
+            {t("nav_donor_radar")}
           </Link>
         </div>
       </div>
@@ -161,19 +159,19 @@ export default function Home() {
               <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
                 <div className="flex items-center gap-2">
                   <Flame className="h-6 w-6 text-brand-red-neon" />
-                  <h2 className="text-xl font-bold text-white uppercase tracking-wider">New Emergency Alert</h2>
+                  <h2 className="text-xl font-bold text-white uppercase tracking-wider">{t("feed_new_alert")}</h2>
                 </div>
                 <button
                   onClick={() => setIsDrawerOpen(false)}
                   className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white"
                 >
-                  Close
+                  {t("auth_close")}
                 </button>
               </div>
 
               <form onSubmit={handleSubmitRequest} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Patient Name *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("hosp_patient_name")} *</label>
                   <input
                     type="text"
                     required
@@ -186,7 +184,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Blood Group Required *</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("dash_blood_group")} *</label>
                     <select
                       value={bloodGroup}
                       onChange={(e) => setBloodGroup(e.target.value)}
@@ -204,7 +202,7 @@ export default function Home() {
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Emergency Level *</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("hosp_urgency")} *</label>
                     <select
                       value={urgencyLevel}
                       onChange={(e) => setUrgencyLevel(e.target.value)}
@@ -220,7 +218,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Hospital Center *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("feed_hospital")} *</label>
                   <input
                     type="text"
                     required
@@ -232,7 +230,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Hospital Location *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("hosp_loc")} *</label>
                   <input
                     type="text"
                     required
@@ -245,7 +243,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Contact Details *</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("feed_contact")} *</label>
                     <input
                       type="text"
                       required
@@ -256,7 +254,7 @@ export default function Home() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Units Required *</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("hosp_units_needed")} *</label>
                     <input
                       type="number"
                       required
@@ -270,7 +268,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Attendant Notes</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t("hosp_notes")}</label>
                   <textarea
                     placeholder="e.g. Severe blood loss in road accident. ICU Bed 4. Urgent requirement."
                     value={notes}
@@ -284,13 +282,13 @@ export default function Home() {
                   type="submit"
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon py-3 text-sm font-bold text-white hover:shadow-[0_0_15px_rgba(255,0,60,0.3)]"
                 >
-                  <Send className="h-4 w-4" /> Dispatch Emergency Broadcast
+                  <Send className="h-4 w-4" /> {t("hosp_broadcast")}
                 </button>
               </form>
             </div>
             
             <p className="text-[10px] text-gray-500 mt-6 leading-normal">
-              WARNING: False dispatches are strictly monitored. Activating this broadcast dispatches automated text logs, telegram channels alerts, and phone synthesized dispatches.
+              {t("warning_p1")} Activating this broadcast dispatches automated text logs, telegram channels alerts, and phone synthesized dispatches.
             </p>
           </div>
         </div>
