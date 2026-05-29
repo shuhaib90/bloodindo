@@ -150,8 +150,15 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-white truncate font-sans">
-            {request.status === 'Active' ? request.patientName : "Blood Indo Donor Saved One Life! ❤️"}
+          <h3 className="text-lg font-bold text-white flex items-center gap-1.5 truncate font-sans">
+            {request.status === 'Active' ? (
+              request.patientName
+            ) : (
+              <>
+                <span>Blood Indo Donor Saved One Life!</span>
+                <Heart className="h-4 w-4 fill-brand-red-neon text-brand-red-neon animate-pulse shrink-0" />
+              </>
+            )}
           </h3>
           
           <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">

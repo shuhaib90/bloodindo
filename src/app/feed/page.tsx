@@ -171,9 +171,8 @@ function FeedContent() {
   const filteredRequests = requests.filter((req: any) => {
     const bloodMatch = selectedBlood === "All" || req.bloodGroup === selectedBlood;
     const urgencyMatch = selectedUrgency === "All" || req.urgencyLevel === selectedUrgency;
-    const statusMatch = activeTab === "my" || req.status === "Active";
     const tabMatch = activeTab === "all" || req.contactDetails === userProfile.phone;
-    return bloodMatch && urgencyMatch && statusMatch && tabMatch;
+    return bloodMatch && urgencyMatch && tabMatch;
   });
 
   const myRequestsCount = requests.filter((r: any) => r.contactDetails === userProfile.phone).length;

@@ -89,6 +89,57 @@ export default function DonorsPage() {
     initData();
   }, []);
 
+  // Periodically reload active donors list in the background to handle users going offline/online in real time
+  useEffect(() => {
+    if (locating || !userLocation) return;
+
+    const reloadDonors = () => {
+      let rawDonors = db.getDonors();
+      const adjustedDonors = rawDonors.map(d => {
+        if (d.id === 'user_self') return d;
+
+        const isMockDonor = ['1', '2', '3', '4', '5'].includes(d.id);
+        
+        if (isMockDonor) {
+          // Adjust distance relative to current GPS center
+          const latOffset = (Math.random() - 0.5) * 0.15;
+          const lngOffset = (Math.random() - 0.5) * 0.15;
+          const newLat = userLocation.latitude + latOffset;
+          const newLng = userLocation.longitude + lngOffset;
+          const dist = db.calculateDistance(userLocation.latitude, userLocation.longitude, newLat, newLng);
+
+          return {
+            ...d,
+            latitude: newLat,
+            longitude: newLng,
+            distance: dist,
+            city: userLocation.city || userLocation.area || d.city
+          };
+        } else {
+          const dist = db.calculateDistance(userLocation.latitude, userLocation.longitude, d.latitude, d.longitude);
+          return {
+            ...d,
+            distance: dist
+          };
+        }
+      });
+
+      adjustedDonors.sort((a, b) => a.distance - b.distance);
+
+      setDonors(prev => {
+        const prevIds = prev.map(p => p.id).join(',');
+        const newIds = adjustedDonors.map(n => n.id).join(',');
+        if (prevIds !== newIds) {
+          return adjustedDonors;
+        }
+        return prev;
+      });
+    };
+
+    const interval = setInterval(reloadDonors, 3000);
+    return () => clearInterval(interval);
+  }, [locating, userLocation]);
+
   // Map Initialization
   useEffect(() => {
     if (!mapRef.current || typeof window === 'undefined' || locating || !userLocation) return;
