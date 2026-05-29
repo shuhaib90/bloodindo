@@ -82,11 +82,8 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 group">
-              <span className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-red-neon to-brand-red-deep shadow-lg shadow-brand-red-neon/30">
-                <Flame className="h-5 w-5 text-white animate-pulse" />
-                <span className="absolute -inset-0.5 rounded-lg bg-brand-red-neon/40 blur opacity-30 group-hover:opacity-100 transition-opacity"></span>
-              </span>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img src="/logo.png" alt="bloodundo logo" className="h-8 w-8 object-contain shrink-0 filter drop-shadow-[0_0_8px_rgba(255,0,60,0.35)] group-hover:scale-105 transition-transform duration-300" />
               <span className="text-xl font-bold tracking-tight text-white font-sans">
                 BLOOD<span className="text-brand-red-neon font-black">INDO</span>
               </span>
