@@ -275,11 +275,12 @@ export default function DashboardPage() {
         setShowAuth(true);
       } else {
         const userProfile = db.getUserProfile();
-        const hasSkipped = sessionStorage.getItem("auth_skipped") === "true";
-        if ((!userProfile || !userProfile.isLoggedIn) && !hasSkipped) {
-          // Auto-prompt after 1.5 seconds for new users so they see the page first
+        const hasPrompted = localStorage.getItem("auth_prompted") === "true";
+        if ((!userProfile || !userProfile.isLoggedIn) && !hasPrompted) {
+          // Auto-prompt after 1.5 seconds for fresh visitors
           setTimeout(() => {
             setShowAuth(true);
+            localStorage.setItem("auth_prompted", "true");
           }, 1500);
         }
       }
@@ -357,7 +358,7 @@ export default function DashboardPage() {
   };
 
   const handleSkipAuth = () => {
-    sessionStorage.setItem("auth_skipped", "true");
+    localStorage.setItem("auth_prompted", "true");
     setShowAuth(false);
   };
 

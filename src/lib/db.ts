@@ -106,13 +106,7 @@ export interface SystemAlert {
 
 export const INITIAL_CAMPS: DonationCamp[] = [];
 
-const INITIAL_DONORS: Donor[] = [
-  { id: '1', name: 'Raj Kumar', bloodGroup: 'O+', latitude: 12.9716, longitude: 77.5946, distance: 2.5, city: 'Bengaluru', phone: '+91 90000 00001', available: true, avatar: '🏥', badges: ['Fast Responder'], streak: 3 },
-  { id: '2', name: 'Priya Sharma', bloodGroup: 'A-', latitude: 12.9816, longitude: 77.6046, distance: 4.2, city: 'Bengaluru', phone: '+91 90000 00002', available: true, avatar: '🩸', badges: ['Lifesaver'], streak: 5 },
-  { id: '3', name: 'Mohammed Ali', bloodGroup: 'B+', latitude: 12.9616, longitude: 77.5846, distance: 1.8, city: 'Bengaluru', phone: '+91 90000 00003', available: true, avatar: '🏥', badges: [], streak: 1 },
-  { id: '4', name: 'Anita Desai', bloodGroup: 'O-', latitude: 12.9916, longitude: 77.5746, distance: 5.6, city: 'Bengaluru', phone: '+91 90000 00004', available: true, avatar: '🩸', badges: ['Universal Donor'], streak: 8 },
-  { id: '5', name: 'Vikram Singh', bloodGroup: 'AB+', latitude: 12.9516, longitude: 77.6146, distance: 3.1, city: 'Bengaluru', phone: '+91 90000 00005', available: true, avatar: '🏥', badges: [], streak: 2 }
-];
+const INITIAL_DONORS: Donor[] = [];
 
 const INITIAL_REQUESTS: BloodRequest[] = [];
 
@@ -495,13 +489,7 @@ export const db = {
           }
         }
         
-        const mockIds = ['1', '2', '3', '4', '5'];
-        mockIds.forEach(id => {
-          const mock = currentLocal.find(d => d.id === id);
-          if (mock && !mergedList.some(d => d.id === id)) {
-            mergedList.push(mock);
-          }
-        });
+        // Mock/demo donors loop removed.
         
         setStorageItem('blood_donors', mergedList);
       }
@@ -692,7 +680,8 @@ export const db = {
   },
 
   getDonors: (): Donor[] => {
-    const list = getStorageItem('blood_donors', INITIAL_DONORS);
+    const rawList = getStorageItem('blood_donors', INITIAL_DONORS);
+    const list = rawList.filter(d => d.id !== '1' && d.id !== '2' && d.id !== '3' && d.id !== '4' && d.id !== '5');
     const profile = db.getUserProfile();
     const userIndex = list.findIndex(d => d.id === 'user_self');
     if (profile && profile.isLoggedIn && profile.availableToDonate) {
