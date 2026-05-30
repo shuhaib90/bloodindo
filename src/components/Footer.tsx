@@ -48,6 +48,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-sm font-semibold">
               <li>
+                <Link href="/how-it-works" className="text-gray-400 hover:text-brand-red-neon transition-colors font-bold text-brand-red-glow">
+                  How it Works
+                </Link>
+              </li>
+              <li>
                 <Link href="/feed" className="text-gray-400 hover:text-brand-red-neon transition-colors">
                   Emergency Feed
                 </Link>
@@ -125,6 +130,10 @@ export default function Footer() {
             <span className="h-3 w-px bg-white/10 hidden sm:inline"></span>
             <Link href="/disclaimer" className="hover:text-brand-red-neon transition-colors">
               Disclaimers &amp; Contact
+            </Link>
+            <span className="h-3 w-px bg-white/10 hidden sm:inline"></span>
+            <Link href="/how-it-works" className="hover:text-brand-red-neon transition-colors">
+              How it Works
             </Link>
           </div>
         </div>
