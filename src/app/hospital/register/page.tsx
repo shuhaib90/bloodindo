@@ -139,6 +139,19 @@ export default function HospitalRegister() {
               </div>
             </div>
 
+            {/* Compliance Consent Checkbox */}
+            <div className="flex items-start gap-3 mt-4 pt-1">
+              <input
+                type="checkbox"
+                id="hospitalConsent"
+                required
+                className="mt-1 rounded bg-neutral-950 border-neutral-800 text-red-600 focus:ring-red-500/50 shrink-0 cursor-pointer h-4 w-4"
+              />
+              <label htmlFor="hospitalConsent" className="text-xs text-neutral-400 leading-normal select-none text-left">
+                We confirm that the hospital registration details are accurate, and agree to the <Link href="/terms" target="_blank" className="text-red-400 hover:underline">Terms of Service</Link>, <Link href="/privacy" target="_blank" className="text-red-400 hover:underline">Privacy Policy</Link>, and <Link href="/disclaimer" target="_blank" className="text-red-400 hover:underline">Medical &amp; Emergency Disclaimers</Link>.
+              </label>
+            </div>
+
             <button 
               type="submit"
               className="w-full bg-red-600 hover:bg-red-500 text-white rounded-2xl py-3.5 font-medium flex items-center justify-center gap-2 transition-colors group mt-4"

@@ -117,6 +117,8 @@ export default function DashboardPage() {
 
   // Auth Modal state
   const [showAuth, setShowAuth] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
   // Login / Register fields
@@ -360,6 +362,42 @@ export default function DashboardPage() {
   const handleSkipAuth = () => {
     localStorage.setItem("auth_prompted", "true");
     setShowAuth(false);
+  };
+
+  const handleDeleteAccountClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteAccountConfirm = async () => {
+    if (deleteConfirmText.toUpperCase() !== "DELETE" || !profile?.id) return;
+    setLoading(true);
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('bloodindo_profiles')
+        .delete()
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      // Clear local storage and log out
+      await supabase.auth.signOut();
+      db.saveUserProfile({ ...db.getUserProfile(), isLoggedIn: false } as any);
+      localStorage.removeItem('blood_user_profile');
+      
+      db.addSystemAlert({
+        type: 'request',
+        message: `SYSTEM: Account permanently deleted for ${profile.name}`
+      });
+
+      window.dispatchEvent(new Event('telegram-status-updated'));
+      window.location.reload();
+    } catch (e: any) {
+      alert("Error deleting account: " + e.message);
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
@@ -979,6 +1017,26 @@ export default function DashboardPage() {
                   >
                     Save Registry
                   </button>
+
+                  {/* Danger Zone: Account Deletion Option */}
+                  <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-red-500 tracking-wider flex items-center gap-1.5 font-sans">
+                        <ShieldAlert className="h-4 w-4" /> Danger Zone
+                      </h4>
+                      <p className="text-[10px] text-gray-500 mt-1 font-sans">
+                        Permanently delete your profile and all associated volunteer data from the emergency network.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccountClick}
+                      className="w-full rounded-xl bg-red-950/20 border border-red-500/30 hover:bg-red-500 hover:text-white py-3 text-xs font-bold text-red-400 active:scale-95 transition-all cursor-pointer"
+                    >
+                      Delete My Account
+                    </button>
+                  </div>
                 </form>
               )}
             </div>
@@ -1215,6 +1273,20 @@ export default function DashboardPage() {
                 />
               </div>
 
+              {authMode === 'register' && (
+                <div className="flex items-start gap-2.5 pt-1.5 pb-2">
+                  <input
+                    type="checkbox"
+                    id="registerConsent"
+                    required
+                    className="mt-0.5 rounded border border-white/15 bg-brand-black text-brand-red-neon focus:ring-brand-red-neon focus:ring-1 shrink-0 cursor-pointer h-3.5 w-3.5"
+                  />
+                  <label htmlFor="registerConsent" className="text-[10px] text-gray-400 font-medium leading-normal select-none">
+                    I agree to the <a href="/terms" target="_blank" className="text-brand-red-glow font-bold hover:underline">Terms of Service</a>, <a href="/privacy" target="_blank" className="text-brand-red-glow font-bold hover:underline">Privacy Policy</a>, and <a href="/disclaimer" target="_blank" className="text-brand-red-glow font-bold hover:underline">Medical &amp; Emergency Disclaimers</a>.
+                  </label>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -1256,6 +1328,53 @@ export default function DashboardPage() {
                 className="w-full py-2.5 rounded-xl border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/20 active:scale-95 transition-all cursor-pointer"
               >
                 Do it later / Skip for now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ACCOUNT DELETION CONFIRMATION MODAL */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-black/95 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="w-full max-w-md bg-brand-charcoal rounded-2xl border border-red-500/30 p-6 shadow-2xl space-y-5">
+            <div className="flex items-center gap-3 text-red-500 border-b border-white/5 pb-4">
+              <ShieldAlert className="h-6 w-6 animate-bounce" />
+              <h3 className="text-lg font-black uppercase tracking-wider font-sans">Delete Account?</h3>
+            </div>
+
+            <p className="text-xs text-gray-300 leading-relaxed font-medium font-sans">
+              This action is <strong className="text-red-400">PERMANENT</strong> and cannot be undone. It will completely wipe your volunteer profile, badges, history, and instantly disconnect all your Telegram dispatches.
+            </p>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider font-sans">
+                Type <span className="text-red-400 font-black">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                placeholder="DELETE"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-red-500 uppercase tracking-widest text-center"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleDeleteAccountConfirm}
+                disabled={deleteConfirmText.toUpperCase() !== "DELETE" || loading}
+                className="flex-1 rounded-xl bg-red-600 disabled:bg-red-950/20 disabled:text-red-900 text-white py-3 text-xs font-bold transition-all cursor-pointer hover:bg-red-500 active:scale-95"
+              >
+                {loading ? "Deleting..." : "Permanently Delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); }}
+                className="flex-1 rounded-xl bg-white/5 border border-white/10 text-gray-300 py-3 text-xs font-bold transition-all cursor-pointer hover:bg-white/10 hover:border-white/20"
+              >
+                Cancel
               </button>
             </div>
           </div>

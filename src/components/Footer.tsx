@@ -114,13 +114,17 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} bloodundo.in. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-wider text-gray-500">
+          <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold uppercase tracking-wider text-gray-500 flex-wrap justify-center sm:justify-start">
             <Link href="/terms" className="hover:text-brand-red-neon transition-colors">
               Terms &amp; Conditions
             </Link>
-            <span className="h-3 w-px bg-white/10"></span>
+            <span className="h-3 w-px bg-white/10 hidden sm:inline"></span>
             <Link href="/privacy" className="hover:text-brand-red-neon transition-colors">
               Privacy Policy
+            </Link>
+            <span className="h-3 w-px bg-white/10 hidden sm:inline"></span>
+            <Link href="/disclaimer" className="hover:text-brand-red-neon transition-colors">
+              Disclaimers &amp; Contact
             </Link>
           </div>
         </div>
