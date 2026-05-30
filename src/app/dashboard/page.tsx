@@ -268,11 +268,20 @@ export default function DashboardPage() {
   useEffect(() => {
     checkSession();
 
-    // Trigger Auth Modal if auth parameter is present in URL query
+    // Trigger Auth Modal if auth parameter is present in URL query or if user is not logged in and hasn't skipped
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('auth') === 'true') {
         setShowAuth(true);
+      } else {
+        const userProfile = db.getUserProfile();
+        const hasSkipped = sessionStorage.getItem("auth_skipped") === "true";
+        if ((!userProfile || !userProfile.isLoggedIn) && !hasSkipped) {
+          // Auto-prompt after 1.5 seconds for new users so they see the page first
+          setTimeout(() => {
+            setShowAuth(true);
+          }, 1500);
+        }
       }
     }
   }, []);
@@ -347,12 +356,22 @@ export default function DashboardPage() {
     window.location.reload();
   };
 
+  const handleSkipAuth = () => {
+    sessionStorage.setItem("auth_skipped", "true");
+    setShowAuth(false);
+  };
+
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
     
     if (!authIdentifier || !authPassword) {
       setAuthError("Please fill in all required fields.");
+      return;
+    }
+
+    if (authMode === 'register' && !authName) {
+      setAuthError("Please enter your full name.");
       return;
     }
 
@@ -367,29 +386,99 @@ export default function DashboardPage() {
         console.warn("Location detection skipped or failed during auth.", e);
       }
 
-      // Step 2: Call appropriate API
-            const baseEndpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
-      const endpoint = isCapacitor ? `https://bloodundo.in${baseEndpoint}` : baseEndpoint;
-      const payload = authMode === 'login' 
-        ? { identifier: authIdentifier, password: authPassword }
-        : { identifier: authIdentifier, password: authPassword, name: authName, city: loc?.city || '' };
+      // Step 2: Directly execute authentication client-side to be 100% platform-agnostic (Capacitor/Web)
+      let apiUser;
+      const isPhone = /^[\d\+\-\s]+$/.test(authIdentifier);
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      if (authMode === 'login') {
+        // --- CLIENT-SIDE LOGIN ---
+        let query = supabase.from('bloodindo_profiles').select('*');
+        if (isPhone) {
+          const normalizedPhone = authIdentifier.replace(/\D/g, '').slice(-10);
+          query = query.like('phone', `%${normalizedPhone}`);
+        } else {
+          query = query.eq('username', authIdentifier);
+        }
+        
+        const { data: user, error: fetchError } = await query.maybeSingle();
+        
+        if (fetchError || !user) {
+          throw new Error('Invalid credentials. User not found.');
+        }
 
-      const data = await res.json();
+        if (!user.password_hash) {
+          throw new Error('Account requires social login or OTP.');
+        }
 
-      if (!data.success) {
-        throw new Error(data.message || "Authentication failed");
+        // Compare password client-side using bcryptjs
+        const bcrypt = await import('bcryptjs');
+        const isMatch = await bcrypt.compare(authPassword, user.password_hash);
+        
+        if (!isMatch) {
+          throw new Error('Invalid credentials. Incorrect password.');
+        }
+
+        // Update login status
+        await supabase.from('bloodindo_profiles').update({ is_logged_in: true }).eq('id', user.id);
+        
+        apiUser = { ...user, is_logged_in: true };
+      } else {
+        // --- CLIENT-SIDE REGISTER ---
+        const phone = isPhone ? authIdentifier : '';
+        const username = !isPhone ? authIdentifier : '';
+
+        // Check duplicate identifier first
+        let query = supabase.from('bloodindo_profiles').select('id');
+        if (isPhone) {
+          const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
+          query = query.like('phone', `%${normalizedPhone}`);
+        } else {
+          query = query.eq('username', username);
+        }
+        
+        const { data: existingUser } = await query.maybeSingle();
+        
+        if (existingUser) {
+          throw new Error('An account with this identifier already exists.');
+        }
+
+        // Hash password client-side
+        const bcrypt = await import('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(authPassword, salt);
+
+        const customUserId = 'custom_' + Date.now() + Math.floor(Math.random() * 1000);
+
+        const { data: newUser, error: insertError } = await supabase.from('bloodindo_profiles').insert({
+          id: customUserId,
+          phone: phone || null,
+          username: username || null,
+          password_hash: passwordHash,
+          name: authName || (isPhone ? 'New User' : username),
+          blood_group: '',
+          city: loc?.city || '',
+          country: loc?.country || '',
+          state: loc?.state || '',
+          district: loc?.district || '',
+          area: loc?.area || '',
+          latitude: loc?.latitude || 0,
+          longitude: loc?.longitude || 0,
+          is_logged_in: true,
+          streak: 0,
+          points: 100, // Starting points for registration
+          donations_count: 0,
+          badges: []
+        }).select().single();
+
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw new Error('Database error creating account: ' + insertError.message);
+        }
+
+        apiUser = { ...newUser };
       }
 
-      // Step 3: Construct local profile from API response + GPS
-      const apiUser = data.user;
-      
+      // Step 3: Construct local profile from Supabase user profile
       const updatedProfile: UserProfile = {
         id: apiUser.id,
         name: apiUser.name,
@@ -409,12 +498,13 @@ export default function DashboardPage() {
         donationsCount: apiUser.donations_count || 0,
         badges: apiUser.badges || [],
         isLoggedIn: true,
-        availableToDonate: apiUser.available_to_donate || false
+        availableToDonate: apiUser.available_to_donate || false,
+        telegramChatId: apiUser.telegram_chat_id || ''
       };
 
       // Save locally
       db.saveUserProfile(updatedProfile);
-        window.dispatchEvent(new Event('telegram-status-updated'));
+      window.dispatchEvent(new Event('telegram-status-updated'));
       setProfile(updatedProfile);
       
       // Update form state fields so dashboard UI reflects them immediately
@@ -1018,7 +1108,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* NEW AUTHENTICATION MODAL */}
+            {/* NEW AUTHENTICATION MODAL */}
       {showAuth && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/80 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="w-full max-w-md bg-brand-charcoal rounded-2xl border border-white/10 p-6 shadow-2xl">
@@ -1028,15 +1118,15 @@ export default function DashboardPage() {
                 {authMode === 'login' ? 'Sign In' : 'Create Account'}
               </h3>
               <button
-                onClick={() => setShowAuth(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white"
+                onClick={handleSkipAuth}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white cursor-pointer"
               >
                 Close
               </button>
             </div>
 
             {authError && (
-              <div className="mb-4 rounded-xl bg-red-950/40 border border-red-500/20 p-3 text-xs text-red-400 font-semibold">
+              <div className="mb-4 rounded-xl bg-red-950/40 border border-red-500/20 p-3 text-xs text-red-400 font-semibold animate-pulse">
                 {authError}
               </div>
             )}
@@ -1046,78 +1136,14 @@ export default function DashboardPage() {
               <span>We will automatically request GPS location on sign-in to configure your donor radar.</span>
             </div>
 
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. John Doe"
-                    value={authName}
-                    onChange={(e) => setAuthName(e.target.value)}
-                    className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Phone or Username</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. +919876543210 or johndoe"
-                  value={authIdentifier}
-                  onChange={(e) => setAuthIdentifier(e.target.value)}
-                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon py-3 text-xs font-bold text-white mt-4 active:scale-95 shadow-lg shadow-brand-red-neon/20 transition-all"
-              >
-                {loading ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
-                ) : authMode === 'login' ? (
-                  <><ArrowRight className="h-4 w-4" /> Sign In</>
-                ) : (
-                  <><UserPlus className="h-4 w-4" /> Register Account</>
-                )}
-              </button>
-                          </form>
-
-              {/* Divider */}
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/5"></div>
-                </div>
-                <div className="relative flex justify-center text-[10px] uppercase">
-                  <span className="bg-brand-charcoal px-3 text-gray-500 font-bold tracking-wider">Or continue with</span>
-                </div>
-              </div>
-
-              {/* Google Button */}
+            {/* HIGHLY PROMINENT GOOGLE SIGN IN BUTTON */}
+            <div className="mb-5 space-y-4">
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-gray-200 py-3 text-sm font-semibold active:scale-[0.98] transition-all"
+                className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-brand-red to-brand-red-neon text-white py-3.5 text-xs font-black uppercase tracking-wider active:scale-[0.98] transition-all shadow-lg shadow-brand-red-neon/30 hover:brightness-110 cursor-pointer border border-brand-red-neon/20"
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-white shrink-0 animate-pulse" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -1135,25 +1161,101 @@ export default function DashboardPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span>Google Sign In</span>
+                <span>Continue with Google</span>
               </button>
-  
-              <div className="mt-6 text-center text-xs text-gray-500">
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/5"></div>
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase">
+                  <span className="bg-brand-charcoal px-3 text-gray-500 font-black tracking-wider">Or continue with credentials</span>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              
+              {authMode === 'register' && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5 font-sans">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. John Doe"
+                    value={authName}
+                    onChange={(e) => setAuthName(e.target.value)}
+                    className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5 font-sans">Phone or Username</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. +919876543210 or johndoe"
+                  value={authIdentifier}
+                  onChange={(e) => setAuthIdentifier(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5 font-sans">Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="        "
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="w-full rounded-xl bg-brand-black border border-white/5 p-3 text-sm text-white focus:outline-none focus:border-brand-red-neon"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 py-3 text-xs font-bold text-white mt-4 active:scale-95 transition-all cursor-pointer"
+              >
+                {loading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin text-brand-red-neon" /> Processing...</>
+                ) : authMode === 'login' ? (
+                  <><ArrowRight className="h-4 w-4 text-brand-red-neon" /> Sign In</>
+                ) : (
+                  <><UserPlus className="h-4 w-4 text-brand-red-neon" /> Register Account</>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-5 text-center text-xs text-gray-500">
               {authMode === 'login' ? (
                 <p>
                   Don't have an account?{' '}
-                  <button onClick={() => { setAuthMode('register'); setAuthError(""); }} className="text-brand-red-glow font-bold hover:underline">
+                  <button onClick={() => { setAuthMode('register'); setAuthError(""); }} className="text-brand-red-glow font-bold hover:underline cursor-pointer">
                     Register here
                   </button>
                 </p>
               ) : (
                 <p>
                   Already have an account?{' '}
-                  <button onClick={() => { setAuthMode('login'); setAuthError(""); }} className="text-brand-red-glow font-bold hover:underline">
+                  <button onClick={() => { setAuthMode('login'); setAuthError(""); }} className="text-brand-red-glow font-bold hover:underline cursor-pointer">
                     Sign in here
                   </button>
                 </p>
               )}
+            </div>
+
+            {/* Skip / Do it later Button */}
+            <div className="mt-5 border-t border-white/5 pt-4 text-center">
+              <button
+                type="button"
+                onClick={handleSkipAuth}
+                className="w-full py-2.5 rounded-xl border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/20 active:scale-95 transition-all cursor-pointer"
+              >
+                Do it later / Skip for now
+              </button>
             </div>
           </div>
         </div>
