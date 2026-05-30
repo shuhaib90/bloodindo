@@ -45,7 +45,7 @@ export default function Disclaimer() {
               1. Medical Disclaimer
             </h2>
             <p className="text-sm sm:text-base">
-              <strong>Blood Indo (bloodundo.in)</strong> is a communication platform designed solely to connect hospitals and patient representatives with voluntary blood donors. We are <strong>not a medical provider, blood bank, or healthcare facility</strong>.
+              <strong>Bloodundo (bloodundo.in)</strong> is a communication platform designed solely to connect hospitals and patient representatives with voluntary blood donors. We are <strong>not a medical provider, blood bank, or healthcare facility</strong>.
             </p>
             <div className="p-4 bg-brand-red-dark/10 border border-brand-red-neon/20 rounded-xl space-y-2">
               <p className="text-xs sm:text-sm text-gray-300">
@@ -77,7 +77,7 @@ export default function Disclaimer() {
                 • <strong>Standard Services:</strong> In all medical crises, always call your local government medical emergency hotline (e.g. <strong>102 or 108</strong> in India) alongside posting a request here.
               </p>
               <p className="text-xs sm:text-sm text-gray-300">
-                • <strong>Delayed/Failed Transfusions:</strong> Blood Indo and its development team bear no liability for any delays, medical issues, or failed donor arrivals resulting from the usage of this platform.
+                • <strong>Delayed/Failed Transfusions:</strong> Bloodundo and its development team bear no liability for any delays, medical issues, or failed donor arrivals resulting from the usage of this platform.
               </p>
             </div>
           </section>
@@ -129,7 +129,7 @@ export default function Disclaimer() {
           </section>
 
           <div className="border-t border-white/5 pt-6 text-center text-xs text-gray-500 font-medium">
-            &copy; 2026 Blood Indo. Handcrafted in Kerala. Dedicated to saving lives.
+            &copy; 2026 Bloodundo. Handcrafted in Kerala. Dedicated to saving lives.
           </div>
         </div>
       </div>

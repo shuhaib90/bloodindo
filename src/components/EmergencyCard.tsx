@@ -183,7 +183,7 @@ export default function EmergencyCard({ request, onUpdate, onOpenPoster, onMarkF
               request.patientName
             ) : (
               <>
-                <span>Blood Indo Donor Saved One Life!</span>
+                <span>Bloodundo Donor Saved One Life!</span>
                 <Heart className="h-4 w-4 fill-brand-red-neon text-brand-red-neon animate-pulse shrink-0" />
               </>
             )}

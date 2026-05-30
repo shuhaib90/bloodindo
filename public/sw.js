@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bloodindo-cache-v1';
+const CACHE_NAME = 'bloodundo-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -64,12 +64,12 @@ self.addEventListener('fetch', (event) => {
 
 // Handle incoming background pushes
 self.addEventListener('push', (event) => {
-  let data = { title: 'Blood Indo Alert', body: 'New emergency blood request nearby.' };
+  let data = { title: 'Bloodundo Alert', body: 'New emergency blood request nearby.' };
   if (event.data) {
     try {
       data = event.data.json();
     } catch {
-      data = { title: 'Blood Indo Alert', body: event.data.text() };
+      data = { title: 'Bloodundo Alert', body: event.data.text() };
     }
   }
 

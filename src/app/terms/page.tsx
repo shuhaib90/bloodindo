@@ -43,7 +43,7 @@ export default function TermsAndConditions() {
               1. Acceptance of Terms
             </h2>
             <p className="text-sm sm:text-base">
-              By accessing, browsing, or using the <strong>Blood Indo (bloodundo.in)</strong> platform, you agree to be bound by these Terms and Conditions and all applicable laws. If you do not agree with any of these terms, you are prohibited from using or accessing this platform. The platform is dedicated strictly to facilitating volunteer-based emergency blood donation matching.
+              By accessing, browsing, or using the <strong>Bloodundo (bloodundo.in)</strong> platform, you agree to be bound by these Terms and Conditions and all applicable laws. If you do not agree with any of these terms, you are prohibited from using or accessing this platform. The platform is dedicated strictly to facilitating volunteer-based emergency blood donation matching.
             </p>
           </section>
 
@@ -113,12 +113,12 @@ export default function TermsAndConditions() {
               5. Disclaimer of Liability
             </h2>
             <p className="text-sm sm:text-base text-gray-400">
-              Blood Indo acts solely as a matching and dispatch gateway. We do not inspect, test, or verify the medical status, infectious diseases, or physical fitness of volunteer donors, nor do we certify the medical capacity of hospitals. Users, donors, and recipients must follow standard medical screening guidelines and hospital regulations during direct donation. We are not responsible for any adverse event during or after donation.
+              Bloodundo acts solely as a matching and dispatch gateway. We do not inspect, test, or verify the medical status, infectious diseases, or physical fitness of volunteer donors, nor do we certify the medical capacity of hospitals. Users, donors, and recipients must follow standard medical screening guidelines and hospital regulations during direct donation. We are not responsible for any adverse event during or after donation.
             </p>
           </section>
 
           <div className="border-t border-white/5 pt-6 text-center text-xs text-gray-500 font-medium">
-            &copy; 2026 Blood Indo. Handcrafted in Kerala. Dedicated to saving lives.
+            &copy; 2026 Bloodundo. Handcrafted in Kerala. Dedicated to saving lives.
           </div>
         </div>
       </div>

@@ -79,7 +79,7 @@ export default function PWAInstall() {
       if (permission === "granted") {
         // Trigger a nice success notification
         const reg = await navigator.serviceWorker.ready;
-        reg.showNotification("Blood Indo Activated!", {
+        reg.showNotification("Bloodundo Activated!", {
           body: "You will now receive emergency blood dispatches instantly.",
           icon: "/logo.png",
           badge: "/logo.png",

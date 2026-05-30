@@ -66,11 +66,11 @@ export default function TelegramBotWorker() {
       const rawText = (message.text || '').trim();
       const text = rawText.toUpperCase();
 
-      const mustReadGuidelines = `📖 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Blood Indo Lifesaver!`;
+      const mustReadGuidelines = `📖 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Bloodundo Lifesaver!`;
 
       // /start command
       if (text.startsWith('/START')) {
-        const welcomeText = `🛡 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nTo connect your account:\n\n1️⃣ Open your Blood Indo website dashboard\n2️⃣ Go to the <b>Connect Telegram</b> section\n3️⃣ Click <b>"Generate Code"</b>\n4️⃣ Copy the code and send it here\n\nExample: <code>BLOOD-847291</code>\n\nYour code expires in 10 minutes.`;
+        const welcomeText = `🛡 <b>Welcome to the Bloodundo Alerts Bot!</b>\n\nTo connect your account:\n\n1️⃣ Open your Bloodundo website dashboard\n2️⃣ Go to the <b>Connect Telegram</b> section\n3️⃣ Click <b>"Generate Code"</b>\n4️⃣ Copy the code and send it here\n\nExample: <code>BLOOD-847291</code>\n\nYour code expires in 10 minutes.`;
         await db.sendTelegramMessage(chatId, welcomeText);
         return;
       }
@@ -92,7 +92,7 @@ export default function TelegramBotWorker() {
             .maybeSingle();
 
           if (existingLink) {
-            await db.sendTelegramMessage(chatId, `⚠️ <b>Already Connected</b>\n\nThis Telegram account is already linked to <b>${existingLink.name}</b>.\n\nTo link a different account, first disconnect from your Blood Indo dashboard.`);
+            await db.sendTelegramMessage(chatId, `⚠️ <b>Already Connected</b>\n\nThis Telegram account is already linked to <b>${existingLink.name}</b>.\n\nTo link a different account, first disconnect from your Bloodundo dashboard.`);
             return;
           }
 
@@ -107,7 +107,7 @@ export default function TelegramBotWorker() {
           if (fetchError) throw fetchError;
 
           if (!matchedProfiles || matchedProfiles.length === 0) {
-            await db.sendTelegramMessage(chatId, `❌ <b>Invalid or Expired Code</b>\n\nThe code <code>​${fullCode}</code> was not found or has expired.\n\nPlease generate a new code from your Blood Indo dashboard.`);
+            await db.sendTelegramMessage(chatId, `❌ <b>Invalid or Expired Code</b>\n\nThe code <code>​${fullCode}</code> was not found or has expired.\n\nPlease generate a new code from your Bloodundo dashboard.`);
             return;
           }
 
@@ -123,7 +123,7 @@ export default function TelegramBotWorker() {
               .update({ telegram_chat_id: null })
               .eq('id', matchedProfile.id);
 
-            await db.sendTelegramMessage(chatId, `⏰ <b>Code Expired</b>\n\nYour verification code has expired. Please generate a new code from your Blood Indo dashboard.`);
+            await db.sendTelegramMessage(chatId, `⏰ <b>Code Expired</b>\n\nYour verification code has expired. Please generate a new code from your Bloodundo dashboard.`);
             return;
           }
 

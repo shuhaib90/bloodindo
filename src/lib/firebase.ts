@@ -17,9 +17,9 @@ export const firebaseConfig = {
 // Log current operating mode
 if (typeof window !== 'undefined') {
   if (isFirebaseConfigured) {
-    console.log('🩸 Blood Indo Backend: Connected to live Firebase Services.');
+    console.log('🩸 Bloodundo Backend: Connected to live Firebase Services.');
   } else {
-    console.log('🩸 Blood Indo Backend: Running in stateful Live-Simulation Mode (LocalStorage Database active).');
+    console.log('🩸 Bloodundo Backend: Running in stateful Live-Simulation Mode (LocalStorage Database active).');
   }
 }
 

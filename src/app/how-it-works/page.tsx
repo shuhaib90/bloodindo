@@ -41,7 +41,7 @@ export default function HowItWorks() {
           <div className="space-y-1">
             <h4 className="text-sm font-bold text-white">Saving Lives at the Speed of Light</h4>
             <p className="text-xs text-gray-400 leading-relaxed font-medium">
-              Blood Indo connects hospitals and patients directly with matching O-Negative and critical donors in their vicinity. By combining geographic precision, instant Telegram alert dispatches, and voluntary blood screening compliance, we strip away coordination delays when every second counts.
+              Bloodundo connects hospitals and patients directly with matching O-Negative and critical donors in their vicinity. By combining geographic precision, instant Telegram alert dispatches, and voluntary blood screening compliance, we strip away coordination delays when every second counts.
             </p>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function HowItWorks() {
             </div>
             
             <p className="text-sm text-gray-300 leading-relaxed font-medium">
-              Rather than spamming public channels, Blood Indo routes detailed emergency dispatches straight to your private Telegram chat using a secure authentication bot:
+              Rather than spamming public channels, Bloodundo routes detailed emergency dispatches straight to your private Telegram chat using a secure authentication bot:
             </p>
             <div className="space-y-3 bg-brand-black border border-white/5 p-4 rounded-xl text-xs leading-relaxed text-gray-400">
               <p>
@@ -104,7 +104,7 @@ export default function HowItWorks() {
                 2️⃣ A unique, expiring 10-minute code is generated for you (e.g. <code>BLOOD-847291</code>).
               </p>
               <p>
-                3️⃣ Message the code to our official bot (<code>@bloodindo_bot</code>). The webhook validates the token, cleans it from the pending buffer, and links your account chat ID instantly.
+                3️⃣ Message the code to our official bot (<code>@bloodundo_bot</code>). The webhook validates the token, cleans it from the pending buffer, and links your account chat ID instantly.
               </p>
               <p className="text-brand-red-glow font-bold">
                 ⚠️ PRIVACY SHIELD: Your private phone number is completely masked and never exposed to the Telegram API or public databases, shielding you from marketing harvesting or spam!
@@ -124,7 +124,7 @@ export default function HowItWorks() {
             </div>
             
             <p className="text-sm text-gray-300 leading-relaxed font-medium">
-              Blood Indo functions as a fully compliant **Progressive Web App (PWA)** on all modern iOS, Android, and Desktop platforms:
+              Bloodundo functions as a fully compliant **Progressive Web App (PWA)** on all modern iOS, Android, and Desktop platforms:
             </p>
             <ul className="list-disc list-inside space-y-2 text-xs text-gray-400 pl-1">
               <li><strong>Zero-Install PWA App:</strong> Click **"Install Now"** on the floating banner to add the app directly to your home screen with offline network support and ultra-fast page load times.</li>
@@ -197,7 +197,7 @@ export default function HowItWorks() {
 
         {/* Footer info */}
         <div className="mt-8 border-t border-white/5 pt-8 text-center text-xs text-gray-500 font-medium">
-          &copy; 2026 Blood Indo. Handcrafted in Kerala. Dedicated to saving lives.
+          &copy; 2026 Bloodundo. Handcrafted in Kerala. Dedicated to saving lives.
         </div>
       </div>
     </div>

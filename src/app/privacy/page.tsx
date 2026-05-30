@@ -116,7 +116,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <div className="border-t border-white/5 pt-6 text-center text-xs text-gray-500 font-medium">
-            &copy; 2026 Blood Indo. Handcrafted in Kerala. Dedicated to saving lives.
+            &copy; 2026 Bloodundo. Handcrafted in Kerala. Dedicated to saving lives.
           </div>
         </div>
       </div>

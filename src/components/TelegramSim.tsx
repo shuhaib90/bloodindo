@@ -14,7 +14,7 @@ export default function TelegramSim() {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'bot',
-      text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).',
+      text: '👋 <b>Welcome to the Bloodundo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -27,7 +27,7 @@ export default function TelegramSim() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const mustReadGuidelines = `🎉 <b>Verification Successful!</b>\n\nYour Blood Indo account is connected to this Telegram alert bot.\n\n📚 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Blood Indo Lifesaver! 🦸‍♂️🏥❤️`;
+  const mustReadGuidelines = `🎉 <b>Verification Successful!</b>\n\nYour Bloodundo account is connected to this Telegram alert bot.\n\n📚 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Bloodundo Lifesaver! 🦸‍♂️🏥❤️`;
 
   const fetchProfile = () => {
     const profile = db.getUserProfile();
@@ -69,7 +69,7 @@ export default function TelegramSim() {
           `• <b>Urgency:</b> ${req.urgencyLevel}\n` +
           `• <b>Required Units:</b> ${req.unitsNeeded}\n` +
           `${req.notes ? `• <b>Notes:</b> ${req.notes}\n` : ''}\n` +
-          `Please open Blood Indo to volunteer and save a life!`;
+          `Please open Bloodundo to volunteer and save a life!`;
 
         setMessages(prev => [
           ...prev,
@@ -171,7 +171,7 @@ export default function TelegramSim() {
             ...prev,
             {
               sender: 'bot',
-              text: `🔍 <b>Account Found!</b>\n\nTo confirm your identity, <b>Step 2:</b> Please type your **Full Name** exactly as registered on Blood Indo.`,
+              text: `🔍 <b>Account Found!</b>\n\nTo confirm your identity, <b>Step 2:</b> Please type your **Full Name** exactly as registered on Bloodundo.`,
               timestamp: responseTime
             }
           ]);
@@ -180,7 +180,7 @@ export default function TelegramSim() {
             ...prev,
             {
               sender: 'bot',
-              text: `❌ <b>Registration Failed</b>\n\nWe couldn't find a Blood Indo profile with the phone number <b>${userMsg}</b>.\n\nPlease type a valid registered phone number, or log in to the website, complete your profile, and try again!`,
+              text: `❌ <b>Registration Failed</b>\n\nWe couldn't find a Bloodundo profile with the phone number <b>${userMsg}</b>.\n\nPlease type a valid registered phone number, or log in to the website, complete your profile, and try again!`,
               timestamp: responseTime
             }
           ]);
@@ -211,7 +211,7 @@ export default function TelegramSim() {
           setStep('linked');
           setIsLinked(true);
           
-          const successText = `🎉 <b>Verification Successful!</b>\n\nWelcome, <b>${matchedProfile.name}</b>! Your Blood Indo account has been connected to this Telegram alert bot.\n\n📚 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Blood Indo Lifesaver! 🦸‍♂️🏥❤️`;
+          const successText = `🎉 <b>Verification Successful!</b>\n\nWelcome, <b>${matchedProfile.name}</b>! Your Bloodundo account has been connected to this Telegram alert bot.\n\n📚 <b>MUST READ: EMERGENCY GUIDELINES</b>\n\n1️⃣ <b>Speed Saves Lives:</b> When you receive a blood request alert matching your blood group, review it immediately. Every minute matters in severe critical ICUs!\n2️⃣ <b>Privacy Shield:</b> We redact patient & hospital details from the public feed on received requests to secure donor and patient privacy.\n3️⃣ <b>Be Ready & Online:</b> Ensure your status is set to 'Active (Ready to Donate)' on your dashboard to appear on nearby radars.\n4️⃣ <b>Community First:</b> Never request or accept financial compensation for donating blood. Donation is a pure lifesaver's duty.\n\nStay alert. You are now officially a Bloodundo Lifesaver! 🦸‍♂️🏥❤️`;
 
           setMessages(prev => [
             ...prev,
@@ -247,7 +247,7 @@ export default function TelegramSim() {
       setMessages([
         {
           sender: 'bot',
-          text: '👋 <b>Welcome to the Blood Indo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).',
+          text: '👋 <b>Welcome to the Bloodundo Alerts Bot!</b>\n\nI will help you link your account so you can receive instant emergency blood requests in your area.\n\n💬 <b>Step 1:</b> Please type your **Registered Phone Number** (e.g. <code>+91 9876543210</code> or <code>9876543210</code>).',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -269,7 +269,7 @@ export default function TelegramSim() {
             BI
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white font-outfit">Blood Indo Alerts</h4>
+            <h4 className="text-xs font-bold text-white font-outfit">Bloodundo Alerts</h4>
             <p className="text-[10px] text-zinc-400">bot</p>
           </div>
           {isLinked && (

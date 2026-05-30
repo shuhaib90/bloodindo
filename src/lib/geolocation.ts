@@ -55,7 +55,7 @@ export async function reverseGeocode(lat: number, lon: number): Promise<Location
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'BloodIndo/1.0 (Emergency Blood Donation Platform)'
+        'User-Agent': 'Bloodundo/1.0 (Emergency Blood Donation Platform)'
       }
     });
 

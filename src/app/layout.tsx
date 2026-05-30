@@ -20,13 +20,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Blood Indo - Emergency Blood Donation Platform",
+  title: "Bloodundo - Emergency Blood Donation Platform",
   description: "Real-time emergency blood donation matching and life-saving alerts. Connect with nearby donors instantly.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Blood Indo",
+    title: "Bloodundo",
   },
 };
 

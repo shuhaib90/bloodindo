@@ -40,7 +40,7 @@ export default function PosterGenerator({ request, isOpen, onClose }: PosterGene
   const handleCopyLink = () => {
     const url = typeof window !== 'undefined' 
       ? `${window.location.origin}/feed?id=${request.id}` 
-      : `https://bloodindo.org/feed?id=${request.id}`;
+      : `https://bloodundo.in/feed?id=${request.id}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -48,7 +48,7 @@ export default function PosterGenerator({ request, isOpen, onClose }: PosterGene
 
   const qrValue = typeof window !== 'undefined' 
     ? `${window.location.origin}/feed?id=${request.id}` 
-    : `https://bloodindo.org/feed?id=${request.id}`;
+    : `https://bloodundo.in/feed?id=${request.id}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-black/90 p-4 backdrop-blur-sm">
@@ -161,7 +161,7 @@ export default function PosterGenerator({ request, isOpen, onClose }: PosterGene
                 </div>
 
                 <div className="border-[1.5px] border-black px-1.5 py-0.5 text-center font-black tracking-widest text-black text-[7px] uppercase leading-none">
-                  BLOOD INDO
+                  BLOODUNDO
                   <div className="text-[5px] font-bold text-zinc-500 border-t border-black/10 mt-0.5 pt-0.5">SAVES LIVES</div>
                 </div>
               </div>
@@ -253,7 +253,7 @@ export default function PosterGenerator({ request, isOpen, onClose }: PosterGene
                 </div>
 
                 <div className="border-[1.5px] border-black px-1.5 py-0.5 text-center font-black tracking-widest text-black text-[6.5px] uppercase leading-none">
-                  BLOOD INDO
+                  BLOODUNDO
                 </div>
               </div>
 
