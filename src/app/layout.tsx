@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import PWAInstall from "@/components/PWAInstall";
 import WarningModal from "@/components/WarningModal";
 import TelegramBotWorker from "@/components/TelegramBotWorker";
+import { Analytics } from "@vercel/analytics/next";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -51,7 +52,9 @@ export default function RootLayout({
         </main>
         <Footer />
         </LanguageProvider>
+        <Analytics />
       </body>
     </html>
   );
 }
+

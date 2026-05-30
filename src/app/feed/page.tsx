@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -44,6 +44,28 @@ function getProximityScore(req: any, userProfile: any): number {
     score += 2000;
   }
   if (userState && targetText.includes(userState)) {
+    score += 500;
+  }
+  
+  return score;
+}
+
+function getAlertProximityScore(alert: any, userProfile: any): number {
+  if (!userProfile) return 0;
+  let score = 0;
+  const textStr = (alert.message || '').toLowerCase();
+  
+  const userCity = (userProfile.city || '').toLowerCase();
+  const userDistrict = (userProfile.district || '').toLowerCase();
+  const userState = (userProfile.state || '').toLowerCase();
+  
+  if (userCity && textStr.includes(userCity)) {
+    score += 5000;
+  }
+  if (userDistrict && textStr.includes(userDistrict)) {
+    score += 2000;
+  }
+  if (userState && textStr.includes(userState)) {
     score += 500;
   }
   
@@ -346,6 +368,31 @@ function FeedContent() {
             <option value="Urgent">Urgent</option>
           </select>
         </div>
+
+        {/* System Broadcasts */}
+        {systemAlerts.length > 0 && activeTab === "all" && (
+          <div className="mb-8 space-y-3">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="h-4 w-4 text-brand-red-neon" /> Local Broadcasts
+            </h3>
+            <div className="space-y-2">
+              {[...systemAlerts].sort((a, b) => {
+                const scoreA = getAlertProximityScore(a, userProfile);
+                const scoreB = getAlertProximityScore(b, userProfile);
+                if (scoreA !== scoreB) return scoreB - scoreA;
+                return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+              }).slice(0, 5).map((alert, idx) => (
+                <div key={alert.id || idx} className="p-3 rounded-xl bg-brand-charcoal/80 border border-brand-red-neon/30 flex gap-3 shadow-[0_0_15px_rgba(255,0,60,0.1)]">
+                  <ShieldAlert className="h-5 w-5 text-brand-red-neon shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-brand-red-neon uppercase tracking-wider mb-0.5">{alert.type}</p>
+                    <p className="text-sm text-gray-200 font-medium leading-relaxed">{alert.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Requests Feed Cards Grid */}
         {filteredRequests.length === 0 ? (
@@ -696,3 +743,4 @@ export default function Feed() {
     </Suspense>
   );
 }
+

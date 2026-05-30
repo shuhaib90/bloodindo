@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Heart, Instagram, Linkedin, Send, ShieldAlert, Award, Globe } from "lucide-react";
@@ -67,6 +67,12 @@ export default function Footer() {
                   User Dashboard
                 </Link>
               </li>
+              <li>
+                <a href="/app-release.apk" download className="text-brand-red-neon hover:text-white transition-colors flex items-center gap-1.5 font-bold shadow-[0_0_10px_rgba(255,0,60,0.3)] bg-brand-red-neon/10 px-3 py-1.5 rounded-lg border border-brand-red-neon/30 w-fit">
+                  <span className="h-2 w-2 rounded-full bg-brand-red-neon animate-pulse"></span>
+                  Install Android App (APK)
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -122,3 +128,4 @@ export default function Footer() {
     </footer>
   );
 }
+
